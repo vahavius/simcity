@@ -45,10 +45,9 @@ function SimCityKeoXe:taoNV(id, camp, mapID, map, nt, theosau)
 		attackPlayerChance = 1,	-- co hoi tan cong nguoi choi neu di ngang qua
 		attackNpcChance = 1,	-- co hoi bat chien dau khi thay NPC khac phe
 		joinFightChance = 1,	-- co hoi tang cong NPC neu di ngang qua NPC danh nhau
-		leaveFightChance = 1000000,
 		fightPlayerRadius = 15,	-- scan for player around and randomly attack
-		attackNpcRadius = 15,	-- scan for NPC around and start randomly attack,
-		fightScanRadius = 15,	-- scan for fight around and join/leave fight it
+		attackNpcRadius = 10,	-- scan for NPC around and start randomly attack,
+		fightScanRadius = 10,	-- scan for fight around and join/leave fight it
 
 		noBackward = 1,			-- do not walk backward
 		kind = 0,				-- quai mode
@@ -63,7 +62,7 @@ function SimCityKeoXe:taoNV(id, camp, mapID, map, nt, theosau)
 		children = theosau or nil,
 		childrenCheckDistance = (theosau and 8) or nil,   -- force distance check for child
 
-		playerID = PlayerIndex
+		playerID = GetName()
 
 	});
   
@@ -262,7 +261,7 @@ end
 function SimCityKeoXe:TaoBai(forceLevel)
 
 	-- Tam thoi xoa xe de tao NPC tu dong neu khong se copy NPC tu xe vao luon
-	if (forceLevel === 999) then
+	if (forceLevel == 999) then
  		SimCityKeoXe:removeAll()
 	end
      
