@@ -13,7 +13,7 @@ IncludeLib("LEAGUE")
 
 Include("\\script\\lib\\remoteexc.lua")
 Include("\\script\\lib\\common.lua")
-Include("\\script\\lib\\string.lua" )
+Include("\\script\\lib\\string.lua")
 Include("\\script\\lib\\log.lua")
 Include("\\script\\lib\\awardtemplet.lua")
 --Include("\\script\\lib\\droptemplet.lua")
@@ -34,12 +34,12 @@ Include("\\script\\global\\vinh\\simcity\\common.lua")
 -- Plugins first
 Include("\\script\\global\\vinh\\simcity\\plugins\\index.lua")
 
--- Data load 
+-- Data load
 Include("\\script\\global\\vinh\\simcity\\data\\index.lua")
 
 -- Now main class
 Include("\\script\\global\\vinh\\simcity\\class\\group_fighter.class.lua")
-Include("\\script\\global\\vinh\\simcity\\class\\xetieu.class.lua")
+
 
 -- Kick start all plugins if needed
 SimCityNgoaiTrang:init()
