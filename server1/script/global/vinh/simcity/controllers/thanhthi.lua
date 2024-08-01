@@ -8,16 +8,14 @@ SimCityMainThanhThi = {
 
 SimCityWorld:initThanhThi()
 
-function SimCityMainThanhThi:_createSingle(id, Map, bt)
+function SimCityMainThanhThi:_createSingle(id, Map, config)
 	local nW, nX, nY = GetWorldPos()
 	local worldInfo = SimCityWorld:Get(nW)
 	local kind = 4
 
-	if bt == 1 then
-		--kind = 0
-	end
 
-	local hardsetName = (bt == 1 and SimCityPlayerName:getName()) or SimCityNPCInfo:getName(id)
+	local hardsetName = (config.ngoaitrang and config.ngoaitrang == 1 and SimCityPlayerName:getName()) or
+		SimCityNPCInfo:getName(id)
 
 	local nListId = GroupFighter:New({
 
@@ -30,11 +28,12 @@ function SimCityMainThanhThi:_createSingle(id, Map, bt)
 		CHANCE_ATTACK_PLAYER = CHANCE_ATTACK_PLAYER, -- co hoi tan cong nguoi choi neu di ngang qua
 		attackNpcChance = CHANCE_AUTO_ATTACK,  -- co hoi bat chien dau
 		CHANCE_ATTACK_NPC = CHANCE_ATTACK_NPC, -- co hoi tang cong NPC neu di ngang qua NPC danh nhau
-		ngoaitrang = bt or 0,
+		ngoaitrang = config.ngoaitrang or 0,
 		noRevive = 0,
 		hardsetName = hardsetName,
 		mode = "thanhthi",
-		lastHP = 500000
+		lastHP = 500000,
+		level = config.level or 95
 
 	})
 
@@ -127,7 +126,7 @@ function SimCityMainThanhThi:createNpcSet(startNPCIndex, perPage, ngoaitrang)
 
 	for i = 0, perPage do
 		local id = startNPCIndex + i
-		self:_createSingle(id, mapID, ngoaitrang or 0)
+		self:_createSingle(id, mapID, { ngoaitrang = ngoaitrang or 0 })
 	end
 end
 
@@ -146,7 +145,7 @@ end
 function SimCityMainThanhThi:allowFighting(show)
 	local nW, nX, nY = GetWorldPos()
 	SimCityWorld:Update(nW, "allowFighting", show)
-	self:caidat()
+	self:thanhthiMenu()
 end
 
 function SimCityMainThanhThi:allowChat(show)
@@ -189,10 +188,10 @@ function SimCityMainThanhThi:caidat()
 	end
 
 
-	if worldInfo.allowFighting == 1 then
-		tinsert(tbSay, "§¸nh nhau [cã]/#SimCityMainThanhThi:allowFighting(0)")
+	if worldInfo.allowChat == 1 then
+		tinsert(tbSay, "Trß chuyÖn [cã]/#SimCityMainThanhThi:allowChat(0)")
 	else
-		tinsert(tbSay, "§¸nh nhau [kh«ng]/#SimCityMainThanhThi:allowFighting(1)")
+		tinsert(tbSay, "Trß chuyÖn [kh«ng]/#SimCityMainThanhThi:allowChat(1)")
 	end
 
 	if worldInfo.showFightingArea == 1 then
@@ -200,13 +199,6 @@ function SimCityMainThanhThi:caidat()
 	else
 		tinsert(tbSay, "Th«ng b¸o n¬i ®¸nh nhau [kh«ng]/#SimCityMainThanhThi:showFightingArea(1)")
 	end
-
-	if worldInfo.allowChat == 1 then
-		tinsert(tbSay, "Trß chuyÖn [cã]/#SimCityMainThanhThi:allowChat(0)")
-	else
-		tinsert(tbSay, "Trß chuyÖn [kh«ng]/#SimCityMainThanhThi:allowChat(1)")
-	end
-
 
 	if worldInfo.showingId == 1 then
 		tinsert(tbSay, "H« sè b¸o danh [cã]/#SimCityMainThanhThi:showhideNpcId(0)")
@@ -256,7 +248,7 @@ function SimCityMainThanhThi:goiAnhHungThiepNgoaiTrang()
 	tinsert(tbSay, "Cao cÊp 1/#SimCityMainThanhThi:createNpcSet(1000,500,1)")
 	tinsert(tbSay, "Cao cÊp 2/#SimCityMainThanhThi:createNpcSet(1500,500,1)")
 	tinsert(tbSay, "Cao cÊp 3/#SimCityMainThanhThi:createNpcSet(2000,500,1)")
-	
+
 	tinsert(tbSay, "KÕt thóc ®èi tho¹i./no")
 	CreateTaskSay(tbSay)
 	return 1
@@ -286,12 +278,18 @@ function SimCityMainThanhThi:thanhthiMenu()
 		Say(
 			"TriÖu MÉn: thµnh thÞ nµy ch­a ®­îc më.<enter><enter>C¸c h¹ cã thÓ ®ãng gãp <color=yellow>b¶n ®å ®­îc ®­êng ®i<color> ®Õn t¸c gi¶ trªn fb héi qu¸n kh«ng?")
 	else
-		local tbSay = { worldInfo.name .. " Vâ L©m §¹i Héi" }
+		local tbSay = { "ThiÕt lËp "..worldInfo.name }
 
-		tinsert(tbSay, "Mêi anh hïng thiªn h¹/#SimCityMainThanhThi:goiAnhHungThiepNgoaiTrang()")
+		if worldInfo.allowFighting == 1 then
+			tinsert(tbSay, "Cho phÐp ®¸nh nhau [cã]/#SimCityMainThanhThi:allowFighting(0)")
+		else
+			tinsert(tbSay, "Cho phÐp ®¸nh nhau [kh«ng]/#SimCityMainThanhThi:allowFighting(1)")
+		end
+
+		tinsert(tbSay, "Thªm anh hïng/#SimCityMainThanhThi:goiAnhHungThiepNgoaiTrang()")
 		tinsert(tbSay, "Thªm qu¸i nh©n/#SimCityMainThanhThi:goiAnhHungThiep()")
 		tinsert(tbSay, "Thªm quan binh/#SimCityMainThanhThi:CreatePatrol()")
-		tinsert(tbSay, "ThiÕt lËp/#SimCityMainThanhThi:caidat()")
+		tinsert(tbSay, "ThiÕt lËp kh¸c/#SimCityMainThanhThi:caidat()")
 		tinsert(tbSay, "Gi¶i t¸n/#SimCityMainThanhThi:removeAll()")
 		tinsert(tbSay, "KÕt thóc ®èi tho¹i./no")
 		CreateTaskSay(tbSay)
@@ -305,23 +303,24 @@ function SimCityMainThanhThi:mainMenu()
 	SimCityChienTranh:modeTongKim(0, 0)
 	SimCityChienTranh.nW = nW
 
+	if nW == 380 or nW == 378 or nW == 379 then
+		return SimCityMainTongKim:mainMenu()
+	end
+	
 	if not worldInfo.name then
-		if nW == 380 or nW == 378 or nW == 379 then
-			return SimCityMainTongKim:mainMenu()
-		end
 		Say(
-			"TriÖu MÉn: thµnh thÞ nµy ch­a ®­îc më.<enter><enter>C¸c h¹ cã thÓ ®ãng gãp <color=yellow>b¶n ®å ®­îc ®­êng ®i<color> ®Õn t¸c gi¶ trªn fb héi qu¸n kh«ng?")
+			"TriÖu MÉn: b¶n ®å nµy ch­a ®­îc më.<enter><enter>C¸c h¹ cã thÓ ®ãng gãp <color=yellow>b¶n ®å ®­îc ®­êng ®i<color> ®Õn t¸c gi¶ trªn fb héi qu¸n kh«ng?")
 	else
-		local tbSay = { worldInfo.name .. " Vâ L©m §¹i Héi" }
-
-		if self.autoAddThanhThi == 1 then
-			tinsert(tbSay, "Thªm anh hïng trªn tÊt c¶ b¶n ®å [cã]/#SimCityMainThanhThi:autoThanhThi(0)")
-		else
-			tinsert(tbSay, "Thªm anh hïng trªn tÊt c¶ b¶n ®å [kh«ng]/#SimCityMainThanhThi:autoThanhThi(1)")
-		end
-
+		local tbSay = { "§¹i Héi Vâ L©m" }		
+		
 		tinsert(tbSay, "Thµnh thÞ/#SimCityMainThanhThi:thanhthiMenu()")
 		tinsert(tbSay, "ChiÕn lo¹n/#SimCityChienTranh:mainMenu()")
+		if self.autoAddThanhThi == 1 then
+			tinsert(tbSay, "§¹i héi vâ l©m (më)/#SimCityMainThanhThi:autoThanhThi(0)")
+		else
+			tinsert(tbSay, "§¹i héi vâ l©m (®ãng)/#SimCityMainThanhThi:autoThanhThi(1)")
+		end
+
 		tinsert(tbSay, "KÕt thóc ®èi tho¹i./no")
 		CreateTaskSay(tbSay)
 	end
@@ -347,7 +346,7 @@ end
 function SimCityMainThanhThi:autoThanhThi(inp)
 	self.autoAddThanhThi = inp
 	if (inp == 0) then
-		for k,v in self.worldStatus do
+		for k, v in self.worldStatus do
 			self.worldStatus["w" .. v.world] = nil
 			self:_clearMap(v.world)
 		end
@@ -377,7 +376,7 @@ function SimCityMainThanhThi:onPlayerEnterMap()
 		self.worldStatus["w" .. nW].enabled = 1
 		local worldInfo = SimCityWorld:Get(nW)
 		if (worldInfo.name ~= "") then
-			self:createNpcSoCap()
+			self:createNpcSoCapByMap()
 			SimCityWorld:Update(nW, "showFightingArea", 0)
 		end
 	end
@@ -402,16 +401,57 @@ function SimCityMainThanhThi:onPlayerExitMap()
 	end
 end
 
-
-function SimCityMainThanhThi:createNpcSoCap()
+function SimCityMainThanhThi:createNpcSoCap(forceIds, level)
 	local nW, _, _ = GetWorldPos()
-
 	local worldInfo = SimCityWorld:Get(nW)
 	if (worldInfo.name ~= "") then
-		local perPage = 100
-		for i = 0, perPage do
-			local id = random(1786, 1795)
-			self:_createSingle(id, nW, 1)
+		local perPage = 200
+		local totalForceIds = 0
+		if forceIds ~= nil then
+			totalForceIds = getn(forceIds)
 		end
+		for i = 0, perPage do
+			local id
+
+			if totalForceIds == 0 then
+				id = random(1786, 1795)
+			else
+				id = forceIds[random(1, totalForceIds)]
+			end
+			self:_createSingle(id, nW, { ngoaitrang = 1, level = level or 95 })
+		end
+	end
+end
+
+function SimCityMainThanhThi:createNpcSoCapByMap()
+	local pW, pX, pY = GetWorldPos()
+
+	-- bienkinh,tuongduong,laman,daily,duongchau,phuongtuong	
+	if nW == 37 or pW == 78 or pW == 176 or pW == 162 or pW == 80 or pW == 1 then
+		return self:createNpcSoCap()
+	end
+
+	-- Get level around
+	local groupList = GetAroundNpcList(60)
+	local tmpFound = {}
+	local nNpcIdx
+	local level
+	local mapping = {}
+	for i = 1, getn(groupList) do
+		nNpcIdx = groupList[i]
+		local nSettingIdx = GetNpcSettingIdx(nNpcIdx)
+		level = NPCINFO_GetLevel(nNpcIdx)
+		local kind = GetNpcKind(nNpcIdx)
+		if level <= 90 and nSettingIdx > 0 and kind == 0 and not mapping[nSettingIdx] then
+			tinsert(tmpFound, nSettingIdx)
+			mapping[nSettingIdx] = 1
+		end
+	end
+	local total = getn(tmpFound)
+
+	if total == 0 then
+		self:createNpcSoCap()
+	else
+		self:createNpcSoCap(tmpFound, level)
 	end
 end
