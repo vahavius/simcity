@@ -157,7 +157,7 @@ function SimCityTongKim:OnDeath(nNpcIndex, currank)
 		launrankname ..
 		" " .. LaunName .. " h¹ träng th­¬ng " .. DeathName .. ", tæng PK lµ " .. BT_GetData(PL_KILLPLAYER);
 
-	Msg2Player("<color=pink> Chóc mõng! B¹n ®· h¹ ®­îc: " .. DeathName .. ", Tæng PK lµ " .. BT_GetData(PL_KILLPLAYER))
+	Msg2Player("<color=cyan> Chóc mõng! B¹n ®· h¹ ®­îc: " .. DeathName .. ", Tæng PK lµ " .. BT_GetData(PL_KILLPLAYER))
 	Msg2MSAll(MISSIONID, str);
 
 
@@ -195,4 +195,34 @@ end
 
 function SimCityTongKim:announceRank(nW, name, newRank)
 	Msg2Map(nW, "<color=white>" .. name .. "<color> th¨ng cÊp <color=yellow>" .. self.RANKS[newRank] .. "<color>")
+end
+
+function SimCityTongKim:updateRank(fighter)
+	local newRank = 1
+	if fighter.fightingScore > 2000 then
+		newRank = 2
+	end
+	if fighter.fightingScore > 5000 then
+		newRank = 3
+	end
+	if fighter.fightingScore > 10000 then
+		newRank = 4
+	end
+	if fighter.fightingScore > 15000 then
+		newRank = 5
+	end
+	if fighter.fightingScore > 20000 then
+		newRank = 6
+	end
+
+	if (fighter.rank ~= newRank) then
+		if newRank > fighter.rank and SearchPlayer(fighter.playerID) == 0 then
+			local worldInfo = SimCityWorld:Get(fighter.nMapId)
+			if worldInfo.showThangCap == 1 then
+				self:announceRank(fighter.nMapId, fighter.hardsetName or SimCityNPCInfo:getName(fighter.nNpcId),
+					newRank)
+			end
+		end
+		fighter.rank = newRank
+	end
 end

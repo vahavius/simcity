@@ -1,124 +1,3 @@
-IncludeLib("NPCINFO")
-
--- Helpers
-function GetTabFileData(path, tab_name, start_row, max_col) -- Doc file txt
-    if TabFile_Load(path, tab_name) ~= 1 then
-        return {}, 0
-    end
-    if not start_row or start_row < 1 then start_row = 1 end
-    if not max_col or max_col < 1 then max_col = 1 end
-    local nCount = TabFile_GetRowCount(tab_name)
-    local tbData = {}
-    for y = start_row, nCount do
-        local tbTemp = {}
-        for x = 1, max_col do tinsert(tbTemp, TabFile_GetCell(tab_name, y, x)) end
-        tinsert(tbData, tbTemp)
-    end
-    return tbData, nCount - start_row + 1
-end
-
--- ·ÉÉ³£¨ÅüÑª¹È£©
--- §¾ý£¨
--- ²ÔåâåË£¨¸´ÖÆ£©
--- ¼ýËþ
--- 5ºÅÊÂ¼þÔÎÑ£¹Ö
--- ±¡
--- ÈË··
--- ÈË··Ê×Áì
---»ÆÉ«Ä¾ÃÞ»¨
---ÉÙÁÖ±äÉí
-
-isChinese = { "<", ">", "ª¹", "³", "newboss", "²", "´", "åâ", "£¨", "¼ý", "ýË", "¼þ", "¼þ", "£", "º", "±", "¡", "»", "ÙÁ",
-    "±", "··", "ÈË" }
-function fixName(inp)
-    local found = false
-    for i = 1, getn(isChinese) do
-        if strfind(inp, isChinese[i]) ~= nil then
-            return "Qu¸i kh¸ch"
-        end
-    end
-    return inp
-end
-
-function GetDistanceRadius(nX, nY, oX, oY)
-    return sqrt((nX - oX) * (nX - oX) + (nY - oY) * (nY - oY))
-end
-
-function arrFlip(arr)
-    local newFlipArr = {}
-    local N = getn(arr)
-    for i = 1, N do
-        tinsert(newFlipArr, arr[N - i + 1])
-    end
-    return newFlipArr
-end
-
-function arrCopy(arr)
-    local newFlipArr = {}
-    local N = getn(arr)
-    for i = 1, N do
-        if type(arr[i]) == 'table' then
-            tinsert(newFlipArr, arrCopy(arr[i]))
-        else
-            tinsert(newFlipArr, arr[i])
-        end
-    end
-    return newFlipArr
-end
-
-function arrJoin(arr)
-    local output = {}
-    for i = 1, getn(arr) do
-        for j = 1, getn(arr[i]) do
-            tinsert(output, arr[i][j])
-        end
-    end
-    return output
-end
-
-function spawnN(arr, linh, N, config)
-    N = N or 16
-    for i = 1, N do
-        local child = {}
-        if config ~= nil then
-            for k, v in config do
-                child[k] = v
-            end
-        end
-        child.nNpcId = linh
-        tinsert(arr, child)
-    end
-    return arr
-end
-
-function DelNpcSafe(nNpcIndex)
-    if (not nNpcIndex) or (nNpcIndex <= 0) then
-        return
-    end
-
-    PIdx = NpcIdx2PIdx(nNpcIndex)
-    if (PIdx > 0) then
-        return
-    end
-    DelNpc(nNpcIndex)
-end
-
-function IsAttackableCamp(camp1, camp2)
-    if (camp1 ~= camp2) then
-        if camp1 == 0 and camp2 == 5 then
-            return 1
-        end
-
-        if camp2 == 0 and camp1 == 5 then
-            return 1
-        end
-        if camp1 ~= 0 and camp2 ~= 0 then
-            return 1
-        end
-    end
-    return 0
-end
-
 function createDiagonalFormPath(points)
     local n = getn(points)
 
@@ -164,6 +43,12 @@ function createDiagonalFormPath(points)
 
     -- Return the corrected points
     return results
+end
+
+function getCenteredCell(X)
+    local centerRow = floor((X[2] + 1) / 2)
+    local centerCol = floor((X[1] + 1) / 2)
+    return centerRow * centerCol
 end
 
 function createFormation(N)
@@ -235,9 +120,79 @@ function transformRhombus(point, centrePoint, fromPos, toPos)
     return { x_prime, y_prime, xF_prime, yF_prime }
 end
 
-function KhoaTHP(nOwnerIndex, flag)
-    if nOwnerIndex > 0 then
-        CallPlayerFunction(nOwnerIndex, DisabledUseTownP, flag)
-        CallPlayerFunction(nOwnerIndex, DisabledUseHeart, flag)
+function genCoords_squareshape(targetFrom, targetTo, N)
+    local walkpath = { targetFrom, { (targetFrom[1] + targetTo[1]) / 2, (targetFrom[2] + targetTo[2]) / 2 }, targetTo }
+    local f = createFormation(N)
+    local targetPointer = 3
+    local rows = f[1] > f[2] and f[1] or f[2]
+    local cols = f[1] > f[2] and f[2] or f[1]
+    local spacing = 1
+    local pathLength = getn(walkpath)
+
+    -- Variables
+    local toPos = walkpath[targetPointer]
+
+    local fromPos
+    if (targetPointer == 1) then
+        fromPos = walkpath[2]
+    else
+        fromPos = walkpath[targetPointer - 1]
     end
+
+    -- Given a target X and Y
+    local x = toPos[1]
+    local y = toPos[2]
+    local xF = fromPos[1]
+    local yF = fromPos[2]
+
+    local mostLeft = 0
+    local mostRight = 0
+    local mostTop = 0
+    local mostBottom = 0
+
+    local rhombus = {}
+    local total = 0
+    for i = 0, rows do
+        for j = 0, cols - 1 do
+            total = total + 1
+
+            local newX = x + j * spacing
+            local newY = y + j * spacing
+
+            local newXF = xF + j * spacing
+            local newYF = yF + j * spacing
+
+            if (mostLeft > newX or mostLeft == 0) then
+                mostLeft = newX
+            end
+            if (mostTop > newY or mostTop == 0) then
+                mostTop = newY
+            end
+            if (mostRight < newX or mostRight == 0) then
+                mostRight = newX
+            end
+            if (mostBottom < newY or mostBottom == 0) then
+                mostBottom = newY
+            end
+            tinsert(rhombus, { newX, newY, newXF, newYF })
+        end
+        y = y - spacing
+        x = x + spacing
+
+        yF = yF - spacing
+        xF = xF + spacing
+    end
+
+    -- And we need to shift it back to centre of the original path
+    local centreX = (mostRight + mostLeft) / 2
+    local centreY = (mostBottom + mostTop) / 2
+    local offSetX = centreX - toPos[1]
+    local offSetY = centreY - toPos[2]
+    for i = 1, total do
+        rhombus[i] = transformRhombus({ rhombus[i][1] - offSetX, rhombus[i][2] - offSetY, rhombus[i][3] - offSetX,
+            rhombus[i][4] - offSetY }, toPos, fromPos, toPos)
+    end
+
+    -- DONE
+    return rhombus
 end

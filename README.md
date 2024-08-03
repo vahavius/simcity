@@ -2,7 +2,7 @@
 
 —vinhsmoke—
 
-Phiên bản hiện tại: **5.2.6**
+Phiên bản hiện tại: **5.3**
 
 Download: [main.tar.gz](https://github.com/vinh-ttn/simcity/archive/refs/heads/main.tar.gz)
 
@@ -13,30 +13,8 @@ Download: [main.tar.gz](https://github.com/vinh-ttn/simcity/archive/refs/heads/m
 -   Tọa độ Biện Kinh, Phượng Tường, Đại Lý: [Duy Ngô](https://www.facebook.com/groups/800085930700601/user/61551322996134/)
 -   Tọa độ Lâm An: [Huy Nguyen](https://www.facebook.com/groups/800085930700601/user/100004608648396/)
 
-## A. Giới thiệu tính năng
 
-Chạy trên JX Server 8
-
-**1) Thành thị:** thành thị sẽ trở nên nhộn nhịp với các gian hàng và các nhân sĩ võ lâm đi lại. Các nhân sĩ có thể đánh nhau bất cứ lúc nào. Ngoài ra bạn có thể gọi thêm quan binh tuần tra (nhưng cũng vô ích) hoặc các quái khách trên cõi giang hồ.
-
-![](https://github.com/vinh-ttn/materials/blob/main/simcity/thanhthi.gif)
-
-**2) Chiến loạn:** khi mở, nhân sĩ ở Tương Dương và Biện Kinh sẽ trực tiếp tiến vào thành để chiếm đoạt của cải. Gây nên 1 trận chiến vô cùng khốc liệt.
-
-![](https://github.com/vinh-ttn/materials/blob/main/simcity/chienloan.gif)
-
-**3) Tống Kim:** chiến trường ác liệt, còn gì tuyệt vời hơn với sự góp mặt của các nhân sĩ võ lâm khắp chốn ao hồ. Bạn có đủ khả năng sống sót không?
-
-![](https://github.com/vinh-ttn/materials/blob/main/simcity/tongkim.gif)
-
-**4) Kéo Xe:** bạn có thể gọi nhân sĩ theo sau cùng đi cho an tâm.
-
-![](https://github.com/vinh-ttn/materials/blob/main/simcity/keoxe.gif)
-
-## B. Cách cài đặt/cập nhật phiên bản mới nhất Simcity trong [1ClickVMFull](https://docs.google.com/document/d/1BUtlCyJdIg-Dc15EZLYU7dMAcGA4wzcZDMBrM3dRpcc/edit?usp=sharing)
-
-![](https://github.com/vinh-ttn/materials/blob/main/simcity/caidat_capnhat_simcity.gif)
-
+## A. Cài đặt/cập nhật qua [1ClickVMFull](https://docs.google.com/document/d/1BUtlCyJdIg-Dc15EZLYU7dMAcGA4wzcZDMBrM3dRpcc/edit?usp=sharing)
 
 Yêu cầu game server của bạn phải có kết nối internet
 
@@ -48,9 +26,11 @@ Yêu cầu game server của bạn phải có kết nối internet
 
 Xong, khởi động lại game server.
 
-## C. Cách cài đặt/cập nhật thủ công Thành Thị, Chiến Loạn và Kéo Xe
+![](https://github.com/vinh-ttn/materials/blob/main/simcity/caidat_capnhat_simcity.gif)
 
-1\) Download file [Simcity](https://github.com/vinh-ttn/simcity/archive/refs/heads/main.tar.gz) về, giải nén và chép toàn bộ vào thư mục gốc của server
+## B. Cài đặt/cập nhật thủ công Thành Thị, Chiến Loạn và Kéo Xe
+
+1\) Download file [main.tar.gz](https://github.com/vinh-ttn/simcity/archive/refs/heads/main.tar.gz) về, giải nén và chép toàn bộ vào thư mục gốc của server
 
 2\) Xong. Khởi động server và tìm đến gần hiệu thuốc Tương Dương:
 
@@ -58,7 +38,7 @@ Xong, khởi động lại game server.
 
 \* gặp Vô Kỵ để điều khiển kéo xe (+ nhận lệnh bài kéo xe\*)
 
-## D. Cách cài đặt/cập nhật thủ công Tống Kim (Bảo vệ nguyên soái)
+## C. Cài đặt/cập nhật thủ công Tống Kim (Bảo vệ nguyên soái)
 
 1\) Để có được NPC Triệu Mẫn và Vô Kỵ trong Tống Kim, cần mở file
 
@@ -85,6 +65,25 @@ ngay sau dòng đó, thêm vào dòng
 5\) (Không cần lắm) Vì mặc định của KingSoft/VNG, mỗi phe cần 1 người chơi để đánh bạn mới có điểm.\
 Nếu bạn không muốn như vậy. Có thể xem hướng dẫn để chỉnh server lại như sau: <https://www.facebook.com/groups/volamquan/permalink/1264194464289743/>
 
+## D. Giới thiệu tính năng
+
+Chạy trên JX Server 8
+
+**1) Thành thị:** thành thị sẽ trở nên nhộn nhịp với các gian hàng và các nhân sĩ võ lâm đi lại. Các nhân sĩ có thể đánh nhau bất cứ lúc nào. Ngoài ra bạn có thể gọi thêm quan binh tuần tra (nhưng cũng vô ích) hoặc các quái khách trên cõi giang hồ.
+
+![](https://github.com/vinh-ttn/materials/blob/main/simcity/thanhthi.gif)
+
+**2) Chiến loạn:** khi mở, nhân sĩ ở Tương Dương và Biện Kinh sẽ trực tiếp tiến vào thành để chiếm đoạt của cải. Gây nên 1 trận chiến vô cùng khốc liệt.
+
+![](https://github.com/vinh-ttn/materials/blob/main/simcity/chienloan.gif)
+
+**3) Tống Kim:** chiến trường ác liệt, còn gì tuyệt vời hơn với sự góp mặt của các nhân sĩ võ lâm khắp chốn ao hồ. Bạn có đủ khả năng sống sót không?
+
+![](https://github.com/vinh-ttn/materials/blob/main/simcity/tongkim.gif)
+
+**4) Kéo Xe:** bạn có thể gọi nhân sĩ theo sau cùng đi cho an tâm.
+
+![](https://github.com/vinh-ttn/materials/blob/main/simcity/keoxe.gif)
 
 ## E. Thông tin thêm
 
@@ -100,7 +99,7 @@ Nếu bạn không muốn như vậy. Có thể xem hướng dẫn để chỉnh
 
 ### NPC quá mạnh 
 
-\***\*![](https://lh7-us.googleusercontent.com/docsz/AD_4nXctDkLIw67xDMciom4lw9DzdbTlcLTFPF0s57aM2Y4_AsVgtZUKGvjm68E4HK9dka3f3LTKdGHumHDsom9GgLVrWVQoaXZGlLCftrT9FNMKJEgl_0WBaUnjFO5fb4__zu2iQ83PfpFS7MEYFA-AESd1RuNg?key=my0UP0YCEuAhRT8eOcMeRw)\*\***&#x20;
+![](https://lh7-us.googleusercontent.com/docsz/AD_4nXctDkLIw67xDMciom4lw9DzdbTlcLTFPF0s57aM2Y4_AsVgtZUKGvjm68E4HK9dka3f3LTKdGHumHDsom9GgLVrWVQoaXZGlLCftrT9FNMKJEgl_0WBaUnjFO5fb4__zu2iQ83PfpFS7MEYFA-AESd1RuNg?key=my0UP0YCEuAhRT8eOcMeRw)
 
 ### Thay đổi giữa các phiên bản
 

@@ -217,7 +217,6 @@ SimCityNPCInfo = {
 	nhanvat = {
 		socap = {
 
-
 			{ 1786, 1795 }, -- 100k
 
 		},
@@ -358,11 +357,31 @@ function SimCityNPCInfo:getSpeed(id)
 end
 
 function SimCityNPCInfo:getHPByCap(cap)
-	if cap == 0 then
+	if cap == 1 then
 		return random(50000, 200000)
 	end
-	if cap == 1 then
-		return random(200000, 1000000)
+	if cap == 2 then
+		return random(200000, 500000)
 	end
-	return random(1000000, 2000000)
+
+	return random(500000, 1000000)
+end
+
+function SimCityNPCInfo:getPoolByCap(cap)
+	local pool = self.nvSoCap
+
+	if not cap then
+		return pool
+	end
+
+	if cap == 2 then
+		pool = self.nvTrungCap
+	end
+	if cap == 3 then
+		pool = self.nvCaoCap
+	end
+	if cap == 4 then
+		pool = self.nvSieuNhan
+	end
+	return pool
 end
