@@ -82,8 +82,6 @@ function SimCityChienTranh:genWalkPath(forCamp)
 	local path1 = self.path1
 	local path2 = self.path2
 
-
-
 	-- Bottom to top
 	local myPath = {}
 	if (forCamp == 1) then
@@ -119,7 +117,7 @@ function SimCityChienTranh:taoNV(id, camp, mapID, map, nt, theosau, cap)
 
 
 
-	return FighterManager:Add({
+	return GroupFighter:Add({
 
 		szName = name or "",
 
@@ -127,7 +125,7 @@ function SimCityChienTranh:taoNV(id, camp, mapID, map, nt, theosau, cap)
 		nMapId = mapID,                         -- required, map
 		camp = realCamp,                        -- optional, camp
 
-		walkMode = (theosau and "keoxe") or "random", -- optional: random, keoxe, or 1 for formation
+		walkMode = (theosau and "keoxe") or "random", -- optional: random, keoxe, or formation for formation
 		walkVar = (theosau and 2) or 4,         -- random walk of radius of 4*2
 		originalWalkPath = map,
 
@@ -162,7 +160,7 @@ function SimCityChienTranh:taoNV(id, camp, mapID, map, nt, theosau, cap)
 
 		cap = cap,
 
-		children = theosau or nil,
+		childrenSetup = theosau or nil,
 		childrenCheckDistance = (theosau and 8) or nil -- force distance check for child
 
 	})
@@ -190,14 +188,14 @@ function SimCityChienTranh:taodoi(thonglinh, camp, mapID, map, children5)
 	end
 
 
-	return FighterManager:Add({
+	return GroupFighter:Add({
 		szName = name or "",
 
 		nNpcId = thonglinh, -- required, main char ID
-		nMapId = mapID, -- required, map
-		camp = realCamp, -- optional, camp
-		children = children, -- optional, children
-		walkMode = 1,  -- optional: random or 1 for formation
+		nMapId = mapID,     -- required, map
+		camp = realCamp,    -- optional, camp
+		childrenSetup = children, -- optional, children
+		walkMode = "formation", -- optional: random or 1 for formation
 		originalWalkPath = map,
 
 		noStop = 1,          -- optional: cannot pause any stop (otherwise 90% walk 10% stop)
@@ -306,8 +304,8 @@ function SimCityChienTranh:phe_tudo(startNPCIndex, perPage, ngoaitrang)
 		local id = startNPCIndex + i
 		local myPath = self:genWalkPath(forCamp)
 
-		local id = self:taoNV(id, forCamp, self.nW, myPath, ngoaitrang or 0)
-		if id > 0 then
+		local fighter = self:taoNV(id, forCamp, self.nW, myPath, ngoaitrang or 0)
+		if fighter then
 			if forCamp == 1 then
 				forCamp = 2
 			else
@@ -368,8 +366,8 @@ function SimCityChienTranh:nv_tudo(cap)
 		local id = pool[random(1, getn(pool))]
 		local myPath = self:genWalkPath(forCamp)
 
-		local id = self:taoNV(id, forCamp, self.nW, myPath, 1, nil, cap)
-		if id > 0 then
+		local fighter = self:taoNV(id, forCamp, self.nW, myPath, 1, nil, cap)
+		if fighter then
 			if forCamp == 1 then
 				forCamp = 2
 			else
@@ -434,27 +432,37 @@ function SimCityChienTranh:phe_quanbinh()
 end
 
 function SimCityChienTranh:removeAll()
-	FighterManager:ClearMap(self.nW)
+	GroupFighter:ClearMap(self.nW)
+end
+
+function SimCityChienTranh:getWorldName()
+	local worldInfo = SimCityWorld:Get(self.nW)
+
+	local counter = 0
+	for k, v in GroupFighter.fighterList do
+		if v.nMapId and v.nMapId == self.nW then
+			counter = counter + 1
+		end
+	end
+	return { worldInfo.name .. " Chi’n Loπn<enter><color=yellow>Nh©n sË hi÷n tπi: " .. counter }
 end
 
 function SimCityChienTranh:goiAnhHungThiepNgoaiTrang()
-	local worldInfo = SimCityWorld:Get(self.nW)
-
-	local tbSay = { worldInfo.name .. " Chi’n Loπn" }
+	local tbSay = self:getWorldName()
 
 
 	tinsert(tbSay, "S¨ c p/#SimCityChienTranh:nv_tudo(1)")
-	--tinsert(tbSay, "S¨ c p (5 xe)/#SimCityChienTranh:nv_tudo_xe(0)")
+	tinsert(tbSay, "S¨ c p (5 xe)/#SimCityChienTranh:nv_tudo_xe(1)")
 
 	tinsert(tbSay, "Trung c p/#SimCityChienTranh:nv_tudo(2)")
-	--tinsert(tbSay, "Trung c p (5 xe)/#SimCityChienTranh:nv_tudo_xe(1)")
+	tinsert(tbSay, "Trung c p (5 xe)/#SimCityChienTranh:nv_tudo_xe(2)")
 
 
 	tinsert(tbSay, "Cao c p/#SimCityChienTranh:nv_tudo(3)")
-	--tinsert(tbSay, "Cao c p 1 (5 xe)/#SimCityChienTranh:nv_tudo_xe(2)")
+	tinsert(tbSay, "Cao c p (5 xe)/#SimCityChienTranh:nv_tudo_xe(3)")
 
 	tinsert(tbSay, "Si™u c p/#SimCityChienTranh:nv_tudo(4)")
-	--tinsert(tbSay, "Si™u c p (5 xe)/#SimCityChienTranh:nv_tudo_xe(3)")
+	tinsert(tbSay, "Si™u c p (5 xe)/#SimCityChienTranh:nv_tudo_xe(4)")
 
 
 	tinsert(tbSay, "Quay lπi./#SimCityChienTranh:mainMenu()")
@@ -464,9 +472,8 @@ function SimCityChienTranh:goiAnhHungThiepNgoaiTrang()
 end
 
 function SimCityChienTranh:goiAnhHungThiep()
-	local worldInfo = SimCityWorld:Get(self.nW)
+	local tbSay = self:getWorldName()
 
-	local tbSay = { worldInfo.name .. " Chi’n Loπn" }
 
 
 	tinsert(tbSay, "Cao c p 1/#SimCityChienTranh:phe_tudo(1000,500,0)")
@@ -507,7 +514,7 @@ end
 function SimCityChienTranh:caidat()
 	local worldInfo = SimCityWorld:Get(self.nW)
 
-	local tbSay = { worldInfo.name .. " Chi’n Loπn" }
+	local tbSay = self:getWorldName()
 
 
 
@@ -546,12 +553,12 @@ function SimCityChienTranh:mainMenu()
 	self.path2 = worldInfo.chientranh.path2
 
 
-	local tbSay = { worldInfo.name .. " Chi’n Loπn" }
+	local tbSay = self:getWorldName()
 
 	tinsert(tbSay, "MÍi anh hÔng thi™n hπ/#SimCityChienTranh:goiAnhHungThiepNgoaiTrang()")
 	tinsert(tbSay, "Th™m qu∏i nh©n/#SimCityChienTranh:goiAnhHungThiep()")
 	tinsert(tbSay, "Th™m quan binh/#SimCityChienTranh:phe_quanbinh()")
-	tinsert(tbSay, "Xem b∂ng x’p hπng/#FighterManager:ThongBaoBXH(" .. (self.nW) .. ")")
+	tinsert(tbSay, "Xem b∂ng x’p hπng/#GroupFighter:ThongBaoBXH(" .. (self.nW) .. ")")
 	tinsert(tbSay, "Thi’t lÀp/#SimCityChienTranh:caidat()")
 	tinsert(tbSay, "Gi∂i t∏n/#SimCityChienTranh:removeAll()")
 	tinsert(tbSay, "K’t thÛc ÆËi thoπi./no")
