@@ -2,7 +2,13 @@
 Include("\\script\\global\\vinh\\simcity\\controllers\\tongkim.lua")
 SimCityMainThanhThi = {
 	worldStatus = {},
-	autoAddThanhThi = STARTUP_AUTOADD_THANHTHI
+	autoAddThanhThi = STARTUP_AUTOADD_THANHTHI,
+	thanhThiSize = THANHTHI_SIZE,
+	batchesByMap = {}, -- Store batches by map ID
+	timerIdsByMap = {}, -- Store current batch index for each map
+	masterTimerId = nil, -- Global timer for all batch processing
+	patrolMap = nil,
+	patrolTimerId = nil
 }
 
 SimCityWorld:initThanhThi()
@@ -13,7 +19,7 @@ function SimCityMainThanhThi:_createSingle(id, Map, config)
 	local kind = 4
 
 
-	local hardsetName = (config.ngoaitrang and config.ngoaitrang == 1 and SimCityPlayerName:getName()) or
+	local hardsetName = (config.ngoaitrang and config.ngoaitrang == 1 and SimCityNPCInfo:generateName()) or
 		SimCityNPCInfo:getName(id)
 
 	local npcConfig = {
@@ -37,7 +43,7 @@ function SimCityMainThanhThi:_createSingle(id, Map, config)
 	end
 
 	-- Create parent
-	FighterManager:Add(objCopy(npcConfig))
+	SimCitizen:New(objCopy(npcConfig))
 end
 
 function SimCityMainThanhThi:_createTeamPatrol(nW, thonglinh, linh, N, path)
@@ -48,7 +54,7 @@ function SimCityMainThanhThi:_createTeamPatrol(nW, thonglinh, linh, N, path)
 	end
 
 
-	FighterManager:Add({
+	SimCitizen:New({
 		nNpcId = thonglinh,   -- required, main char ID
 		nMapId = nW,          -- required, map
 		camp = 0,             -- optional, camp
@@ -66,15 +72,12 @@ function SimCityMainThanhThi:_createTeamPatrol(nW, thonglinh, linh, N, path)
 	})
 end
 
-function SimCityMainThanhThi:CreatePatrol(nW)
-	local nA, nX, nY = GetWorldPos()
-
-	nW = nW or nA
-
+function SimCityMainThanhThi:CreatePatrol()
+	local nW = self.patrolMap
 
 	local worldInfo = SimCityWorld:Get(nW)
 
-	local allMap = worldInfo.walkAreas
+	local allMap = worldInfo.walkPaths
 
 	local linh = 682
 
@@ -99,28 +102,60 @@ function SimCityMainThanhThi:CreatePatrol(nW)
 	end
 end
 
-function SimCityMainThanhThi:createAnhHung(cap, perPage, ngoaitrang)
-	local pool = SimCityNPCInfo:getPoolByCap(cap)
+function SimCityMainThanhThi:createAnhHung(capHP, perPage, ngoaitrang)
+	local pool = SimCityNPCInfo:getPoolByCap(capHP)
 
 	local mapID, nX, nY = GetWorldPos()
 	for i = 1, perPage do
 		local id = pool[random(1, getn(pool))]
-		self:_createSingle(id, mapID, { ngoaitrang = ngoaitrang or 0, cap = cap })
+		self:_createSingle(id, mapID, { ngoaitrang = ngoaitrang or 0, capHP = capHP })
 	end
 end
 
-function SimCityMainThanhThi:createNpcSet(startNPCIndex, perPage, ngoaitrang)
+function SimCityMainThanhThi:createNpcSet(cap, total, ngoaitrang)
 	local mapID, nX, nY = GetWorldPos()
-
-	for i = 0, perPage do
-		local id = startNPCIndex + i
-		self:_createSingle(id, mapID, { ngoaitrang = ngoaitrang or 0 })
+	local pool = SimCityNPCInfo:getQuaiByCap(cap)
+	for i = 0, total do
+		local id = pool[random(1, getn(pool))]
+		if (SimCityNPCInfo:IsValidFighter(id) == 1) then
+			self:_createSingle(id, mapID, { ngoaitrang = ngoaitrang or 0 })
+		end
 	end
 end
 
 function SimCityMainThanhThi:removeAll()
 	local nW, nX, nY = GetWorldPos()
-	FighterManager:ClearMap(nW)
+	
+	-- Mark this map's batches as canceled
+	if self.timerIdsByMap[nW] then
+		self.timerIdsByMap[nW].canceled = true
+		self.timerIdsByMap[nW] = nil
+	end
+	
+	-- Clear batches for this map
+	self.batchesByMap[nW] = nil
+	
+	-- Remove all NPCs from the map
+	SimCitizen:ClearMap(nW)
+	
+	-- Check if we can stop the master timer
+	local anyActiveMaps = false
+	for mapId, mapData in self.timerIdsByMap do
+		if not mapData.canceled then
+			anyActiveMaps = true
+			break
+		end
+	end
+	
+	if not anyActiveMaps and self.masterTimerId then
+		DelTimer(self.masterTimerId)
+		self.masterTimerId = nil
+	end
+
+	if self.patrolTimerId then
+		DelTimer(self.patrolTimerId)
+		self.patrolTimerId = nil
+	end
 end
 
 -- MAIN DIALOG FUNCTIONS
@@ -247,10 +282,10 @@ function SimCityMainThanhThi:goiAnhHungThiep()
 
 
 	local tbSay = { worldInfo.name .. " Vâ L©m §¹i Héi" }
-	tinsert(tbSay, "Cao cÊp 1/#SimCityMainThanhThi:createNpcSet(1000,500)")
-	tinsert(tbSay, "Cao cÊp 2/#SimCityMainThanhThi:createNpcSet(1500,500)")
-	tinsert(tbSay, "Cao cÊp 3/#SimCityMainThanhThi:createNpcSet(2000,500)")
-	tinsert(tbSay, "Trung cÊp/#SimCityMainThanhThi:createNpcSet(500,500)")
+	tinsert(tbSay, "Cao cÊp 1/#SimCityMainThanhThi:createNpcSet(4,100)")
+	tinsert(tbSay, "Cao cÊp 2/#SimCityMainThanhThi:createNpcSet(3,100)")
+	tinsert(tbSay, "Cao cÊp 3/#SimCityMainThanhThi:createNpcSet(2,100)")
+	tinsert(tbSay, "Trung cÊp/#SimCityMainThanhThi:createNpcSet(1,100)")
 	--tinsert(tbSay, "Tù chän/#SimCityMainThanhThi:createNpcCustomAsk()")
 	tinsert(tbSay, "KÕt thóc ®èi tho¹i./no")
 	CreateTaskSay(tbSay)
@@ -267,12 +302,12 @@ function SimCityMainThanhThi:thanhthiMenu()
 	else
 		local tbSay = { "ThiÕt lËp " .. worldInfo.name }
 
-		if worldInfo.allowFighting == 1 then
-			tinsert(tbSay, "Cho phÐp ®¸nh nhau [cã]/#SimCityMainThanhThi:allowFighting(0)")
-		else
-			tinsert(tbSay, "Cho phÐp ®¸nh nhau [kh«ng]/#SimCityMainThanhThi:allowFighting(1)")
-		end
-
+		--if worldInfo.allowFighting == 1 then
+		--	tinsert(tbSay, "Cho phÐp ®¸nh nhau [cã]/#SimCityMainThanhThi:allowFighting(0)")
+		--else
+		--	tinsert(tbSay, "Cho phÐp ®¸nh nhau [kh«ng]/#SimCityMainThanhThi:allowFighting(1)")
+		--end
+		self.patrolMap = nW
 		tinsert(tbSay, "Thªm anh hïng/#SimCityMainThanhThi:goiAnhHungThiepNgoaiTrang()")
 		tinsert(tbSay, "Thªm qu¸i nh©n/#SimCityMainThanhThi:goiAnhHungThiep()")
 		tinsert(tbSay, "Thªm quan binh/#SimCityMainThanhThi:CreatePatrol()")
@@ -300,7 +335,7 @@ function SimCityMainThanhThi:mainMenu()
 			"TriÖu MÉn: b¶n ®å nµy ch­a ®­îc më.<enter><enter>C¸c h¹ cã thÓ ®ãng gãp <color=yellow>b¶n ®å ®­îc ®­êng ®i<color> ®Õn t¸c gi¶ trªn fb héi qu¸n kh«ng?")
 	else
 		local counter = 0
-		for k, v in FighterManager.fighterList do
+		for k, v in SimCitizen.fighterList do
 			if v.nMapId and v.nMapId == nW then
 				counter = counter + 1
 			end
@@ -310,9 +345,9 @@ function SimCityMainThanhThi:mainMenu()
 		tinsert(tbSay, "Thµnh thÞ/#SimCityMainThanhThi:thanhthiMenu()")
 		tinsert(tbSay, "ChiÕn lo¹n/#SimCityChienTranh:mainMenu()")
 		if self.autoAddThanhThi == 1 then
-			tinsert(tbSay, "§¹i héi vâ l©m (më)/#SimCityMainThanhThi:autoThanhThi(0)")
+			tinsert(tbSay, "Tù ®éng thªm (më)/#SimCityMainThanhThi:autoThanhThi(0)")
 		else
-			tinsert(tbSay, "§¹i héi vâ l©m (®ãng)/#SimCityMainThanhThi:autoThanhThi(1)")
+			tinsert(tbSay, "Tù ®éng thªm (t¾t)/#SimCityMainThanhThi:autoThanhThi(1)")
 		end
 
 		tinsert(tbSay, "KÕt thóc ®èi tho¹i./no")
@@ -342,7 +377,7 @@ function SimCityMainThanhThi:autoThanhThi(inp)
 	if (inp == 0) then
 		for k, v in self.worldStatus do
 			self.worldStatus["w" .. v.world] = nil
-			FighterManager:ClearMap(v.world)
+			SimCitizen:ClearMap(v.world)
 		end
 	else
 		self:onPlayerEnterMap()
@@ -429,8 +464,10 @@ function SimCityMainThanhThi:createNpcSoCapByMap()
 			end
 		end
 
+		local isThanhThi = SimCityWorld:IsThanhThiMap(nW) == 1
+
 		-- Them 9x vao Thanh Thi
-		if SimCityWorld:IsThanhThiMap(nW) == 1 or getn(tmpFound) == 0 then
+		if isThanhThi or getn(tmpFound) == 0 then
 			tmpFound = arrJoin({ tmpFound, SimCityNPCInfo:getPoolByCap(1) })
 			for j = 511, 523 do
 				tinsert(tmpFound, j)
@@ -441,39 +478,83 @@ function SimCityMainThanhThi:createNpcSoCapByMap()
 		end
 
 
-		if SimCityWorld:IsThanhThiMap(nW) == 1 then
-			total = 200
+		if isThanhThi then
+			total = self.thanhThiSize
 			map9x = 0
 		end
 
 		local N = getn(tmpFound)
 
 		if map9x == 0 then
-			for i = 1, total do
-				local id = tmpFound[random(1, N)]
-				-- Thanh thi / Duoi 9x
-				self:_createSingle(id, nW, { ngoaitrang = 1, level = level or 95, cap = capHP })
+			if isThanhThi then
+				worldInfo.allowFighting = 0
+			else
+				worldInfo.allowFighting = 1
 			end
-			-- Tren 9x = bai luyen cong
+			
+			-- Split into 4 tables of 50 NPCs each
+			local table1 = {}
+			local table2 = {}
+			local table3 = {}
+			local table4 = {}
+			local table5 = {}
+
+			-- Fill each table with 40 random NPCs
+			local perTable = floor(total/5)
+			for i = 1, perTable do
+
+				if isThanhThi and THANHTHI_QUAI == 1 and random(1,3) == 1 then
+					local capQuai = random(1,4)
+					local pool = SimCityNPCInfo:getQuaiByCap(capQuai)
+					local poolN = getn(pool)
+					tinsert(table1, {pool[random(1, poolN)], nW, { ngoaitrang = 0, level = level or 95, capHP = capHP , walkMode = random(1, 4) == 1 and "preset" or "random"}})
+					tinsert(table2, {pool[random(1, poolN)], nW, { ngoaitrang = 0, level = level or 95, capHP = capHP , walkMode = random(1, 4) == 1 and "preset" or "random"}})
+					tinsert(table3, {pool[random(1, poolN)], nW, { ngoaitrang = 0, level = level or 95, capHP = capHP , walkMode = random(1, 4) == 1 and "preset" or "random"}})
+					tinsert(table4, {pool[random(1, poolN)], nW, { ngoaitrang = 0, level = level or 95, capHP = capHP , walkMode = random(1, 4) == 1 and "preset" or "random"}})
+					tinsert(table5, {pool[random(1, poolN)], nW, { ngoaitrang = 0, level = level or 95, capHP = capHP , walkMode = random(1, 4) == 1 and "preset" or "random"}})
+				else
+					tinsert(table1, {tmpFound[random(1, N)], nW, { ngoaitrang = 1, level = level or 95, capHP = capHP , walkMode = random(1, 4) == 1 and "preset" or "random"}})
+					tinsert(table2, {tmpFound[random(1, N)], nW, { ngoaitrang = 1, level = level or 95, capHP = capHP , walkMode = random(1, 4) == 1 and "preset" or "random"}})
+					tinsert(table3, {tmpFound[random(1, N)], nW, { ngoaitrang = 1, level = level or 95, capHP = capHP , walkMode = random(1, 4) == 1 and "preset" or "random"}})
+					tinsert(table4, {tmpFound[random(1, N)], nW, { ngoaitrang = 1, level = level or 95, capHP = capHP , walkMode = random(1, 4) == 1 and "preset" or "random"}})
+					tinsert(table5, {tmpFound[random(1, N)], nW, { ngoaitrang = 1, level = level or 95, capHP = capHP , walkMode = random(1, 4) == 1 and "preset" or "random"}})
+				end
+				
+			end
+
+			-- Add all tables to everything array
+			self:_createBatch({
+				table1,
+				table2,
+				table3,
+				table4,
+				table5
+			})			
+			if isThanhThi then
+				self.patrolMap = nW
+				self.patrolTimerId = AddTimer(20 * 18, "SimCityMainThanhThi:CreatePatrol", self)
+			end 
 		else
+			worldInfo.allowFighting = 1
 			total = 20 -- 20 PT tat ca
+			local everything = {}
 			for i = 1, total do
 				local id = tmpFound[random(1, N)]
 				local children5 = {}
 				for j = 1, 7 do
 					tinsert(children5, {
 						mode = "train",
-						szName = SimCityPlayerName:getName(),
+						szName = SimCityNPCInfo:generateName(),
 						nNpcId = tmpFound[random(1, N)], -- required, main char ID
 					})
 				end
-				self:_createSingle(id, nW,
+				tinsert(everything, {{id, nW,
 					{
-						szName = SimCityPlayerName:getName(),
+						szName = SimCityNPCInfo:generateName(),
 						ngoaitrang = 1,
 						mode = "train",
 						level = level or 95,
-						cap = 1,
+						capHP = 1,
 						childrenSetup = children5,
 						walkMode =
 						"random",
@@ -492,8 +573,108 @@ function SimCityMainThanhThi:createNpcSoCapByMap()
 						TIME_FIGHTING_maxTs = 3000,
 						TIME_RESTING_minTs = 1,
 						TIME_RESTING_maxTs = 3,
-					})
+					}}});
+			end
+			
+			self:_createBatch(everything)
+		end
+	end
+end
+
+-- Global batch processing function that handles all maps
+function processBatches()
+	local activeMapsCount = 0
+	
+	-- Process one batch for each active map
+	for mapId, mapData in SimCityMainThanhThi.timerIdsByMap do
+		if not mapData.canceled then
+			activeMapsCount = activeMapsCount + 1
+			
+			local currentIndex = mapData.currentIndex or 1
+			local batches = SimCityMainThanhThi.batchesByMap[mapId]
+			
+			if batches and currentIndex <= getn(batches) then
+				local batch = batches[currentIndex]
+				local counter = 0
+				local threshold = SimCityMainThanhThi.thanhThiSize or 12
+				
+				-- Count NPCs on this map
+				for k, v in SimCitizen.fighterList do
+					if v.nMapId ~= nil and v.nMapId == mapId then
+						counter = counter + 1
+					end
+				end
+
+				if counter < threshold then
+					-- Process this batch of NPCs
+					if type(batch) == "table" and getn(batch) > 0 then
+						for i = 1, getn(batch) do
+							if type(batch[i]) == "table" and getn(batch[i]) >= 2 then
+								SimCityMainThanhThi:_createSingle(batch[i][1], batch[i][2], batch[i][3])
+							end
+						end
+					end
+					
+					-- Move to next batch
+					SimCityMainThanhThi.timerIdsByMap[mapId].currentIndex = currentIndex + 1
+				else
+					-- No more NPCs needed on this map
+					SimCityMainThanhThi.batchesByMap[mapId] = nil
+					SimCityMainThanhThi.timerIdsByMap[mapId] = nil
+					activeMapsCount = activeMapsCount - 1
+				end
+			else
+				-- All batches processed for this map
+				SimCityMainThanhThi.batchesByMap[mapId] = nil
+				SimCityMainThanhThi.timerIdsByMap[mapId] = nil
+				activeMapsCount = activeMapsCount - 1
 			end
 		end
+	end
+	
+	-- If no active maps, stop the timer
+	if activeMapsCount <= 0 then
+		if SimCityMainThanhThi.masterTimerId then
+			DelTimer(SimCityMainThanhThi.masterTimerId)
+			SimCityMainThanhThi.masterTimerId = nil
+		end
+	else
+		SimCityMainThanhThi.masterTimerId = AddTimer(3 * 18, "processBatches", SimCityMainThanhThi)
+	end
+	
+	-- Return 0 to keep the timer running
+	return 0
+end
+
+function SimCityMainThanhThi:_createBatch(batches)
+	if not batches or getn(batches) == 0 then
+		return
+	end
+	
+	-- Get current map ID if not provided in the batch
+	local mapId = nil
+	if getn(batches) > 0 and type(batches[1]) == "table" then
+		-- Check if this is an array of arrays with NPC data
+		if getn(batches[1]) > 0 and type(batches[1][1]) == "table" and getn(batches[1][1]) >= 2 then
+			-- Extract mapId from the first batch item [npcId, mapId, config]
+			mapId = batches[1][1][2]
+		end
+	end
+	
+	if not mapId then
+		-- Try to get current map ID as fallback
+		local nW, _, _ = GetWorldPos()
+		mapId = nW
+	end
+	
+	-- Initialize data structure for this map
+	self.batchesByMap[mapId] = batches
+	self.timerIdsByMap[mapId] = self.timerIdsByMap[mapId] or {}
+	self.timerIdsByMap[mapId].canceled = false
+	self.timerIdsByMap[mapId].currentIndex = 1
+	
+	-- Start the master timer if not already running
+	if not self.masterTimerId then
+		self.masterTimerId = AddTimer(3 * 18, "processBatches", self)
 	end
 end

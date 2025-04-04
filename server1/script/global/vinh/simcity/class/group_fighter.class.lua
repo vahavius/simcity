@@ -25,13 +25,13 @@ function GroupFighter:Add(tbNpc)
 	local nW = tbNpc.nMapId
 	local worldInfo = {}
 
-	local walkAreas = {}
+	local walkPaths = {}
 
 	local id = tbNpc.nNpcId
 	tbNpc.playerID = tbNpc.playerID or ""
 
 	if (tbNpc.originalWalkPath) then
-		walkAreas = arrCopy(tbNpc.originalWalkPath)
+		walkPaths = arrCopy(tbNpc.originalWalkPath)
 	else
 		if SearchPlayer(tbNpc.playerID) > 0 then
 			local pW, pX, pY = CallPlayerFunction(SearchPlayer(tbNpc.playerID), GetWorldPos)
@@ -40,23 +40,23 @@ function GroupFighter:Add(tbNpc)
 				{ pX, pY }
 			}
 			tbNpc.nPosId = 1
-			walkAreas = {
+			walkPaths = {
 				{ pX, pY }
 			}
 		else
 			worldInfo = SimCityWorld:Get(nW)
-			local worldPaths = worldInfo.walkAreas
+			local worldPaths = worldInfo.walkPaths
 			local walkIndex = random(1, getn(worldPaths))
-			walkAreas = worldPaths[walkIndex]
+			walkPaths = worldPaths[walkIndex]
 		end
 	end
 
-	if walkAreas == nil then
+	if walkPaths == nil then
 		return nil
 	end
 
 	-- No path to walk?
-	if getn(walkAreas) < 1 then
+	if getn(walkPaths) < 1 then
 		return nil
 	end
 
@@ -102,7 +102,7 @@ function GroupFighter:Add(tbNpc)
 
 	-- Setup walk paths
 	if SearchPlayer(tbNpc.playerID) == 0 then
-		tbNpc.tbPos = tbNpc.tbPos or arrCopy(walkAreas)
+		tbNpc.tbPos = tbNpc.tbPos or arrCopy(walkPaths)
 
 		if tbNpc.thanhthi ~= nil and tbNpc.thanhthi == 1 and random(1, 2) < 2 then
 			tbNpc.tbPos = arrFlip(tbNpc.tbPos)
@@ -246,14 +246,16 @@ function GroupFighter:Show(tbNpc, isNew, goX, goY)
 
 				-- Disable fighting?
 				if (tbNpc.isFighting == 0) then
-					SetNpcKind(nNpcIndex, tbNpc.kind or 4)
+					-- TODO An hien
+					-- SetNpcKind(nNpcIndex, tbNpc.kind or 4)
+					SetNpcKind(nNpcIndex, 0)
 					self:SetFightState(tbNpc, 0)
 				end
 
 
 				-- Set NPC life
-				if tbNpc.cap and tbNpc.cap < 2 and NPCINFO_SetNpcCurrentLife then
-					local maxHP = SimCityNPCInfo:getHPByCap(tbNpc.cap)
+				if tbNpc.capHP and tbNpc.capHP < 2 and NPCINFO_SetNpcCurrentLife then
+					local maxHP = SimCityNPCInfo:getHPByCap(tbNpc.capHP)
 					NPCINFO_SetNpcCurrentMaxLife(nNpcIndex, maxHP)
 					NPCINFO_SetNpcCurrentLife(nNpcIndex, maxHP)
 				end
@@ -393,7 +395,7 @@ function GroupFighter:IsNpcEnemyAround(tbNpc, nNpcIndex, radius)
 	end
 
 	-- Thanh thi / tong kim / chien loan
-	allNpcs, nCount = Simcity_GetNpcAroundNpcList(nNpcIndex, radius)
+	allNpcs, nCount = GetNpcAroundNpcList(nNpcIndex, radius)
 	for i = 1, nCount do
 		local fighter2Kind = GetNpcKind(allNpcs[i])
 		local fighter2Camp = GetNpcCurCamp(allNpcs[i])
@@ -696,12 +698,12 @@ function GroupFighter:HardResetPos(tbNpc)
 	local nW = tbNpc.nMapId
 	local worldInfo = {}
 
-	local walkAreas = {}
+	local walkPaths = {}
 
 	local id = tbNpc.nNpcId
 
 	if (tbNpc.originalWalkPath) then
-		walkAreas = arrCopy(tbNpc.originalWalkPath)
+		walkPaths = arrCopy(tbNpc.originalWalkPath)
 	else
 		if SearchPlayer(tbNpc.playerID) > 0 then
 			local pW, pX, pY = CallPlayerFunction(SearchPlayer(tbNpc.playerID), GetWorldPos)
@@ -710,28 +712,28 @@ function GroupFighter:HardResetPos(tbNpc)
 				{ pX, pY }
 			}
 			tbNpc.nPosId = 1
-			walkAreas = {
+			walkPaths = {
 				{ pX, pY }
 			}
 		else
 			worldInfo = SimCityWorld:Get(nW)
-			local worldPaths = worldInfo.walkAreas
+			local worldPaths = worldInfo.walkPaths
 			local walkIndex = random(1, getn(worldPaths))
-			walkAreas = worldPaths[walkIndex]
+			walkPaths = worldPaths[walkIndex]
 		end
 	end
 
-	if walkAreas == nil then
+	if walkPaths == nil then
 		return nil
 	end
 
 
-	if walkAreas == nil then
+	if walkPaths == nil then
 		return 0
 	end
 
 	-- No path to walk?
-	if getn(walkAreas) < 1 then
+	if getn(walkPaths) < 1 then
 		return 0
 	end
 
@@ -748,7 +750,7 @@ function GroupFighter:HardResetPos(tbNpc)
 
 	-- Setup walk paths
 	if SearchPlayer(tbNpc.playerID) == 0 then
-		tbNpc.tbPos = tbNpc.tbPos or arrCopy(walkAreas)
+		tbNpc.tbPos = tbNpc.tbPos or arrCopy(walkPaths)
 		if tbNpc.walkMode ~= "random" and tbNpc.walkMode ~= "keoxe" and tbNpc.children then
 			tbNpc.tbPos = createDiagonalFormPath(tbNpc.tbPos)
 		end
@@ -1051,12 +1053,12 @@ function GroupFighter:Breath(nListId)
 		-- Otherwise just Random chat
 		if worldInfo.allowChat == 1 then
 			if tbNpc.isFighting == 1 then
-				if random(1, CHANCE_CHAT / 2) <= 2 then
-					NpcChat(nNpcIndex, SimCityChat:getChatFight())
+				if random(1, 1000) <= CHANCE_CHAT then
+					NpcChat(nNpcIndex, allSimcityChat.fighting[random(1, getn(allSimcityChat.fighting))])
 				end
 			else
-				if random(1, CHANCE_CHAT) <= 2 then
-					NpcChat(nNpcIndex, SimCityChat:getChat())
+				if random(1, 1000) <= CHANCE_CHAT then
+					NpcChat(nNpcIndex, allSimcityChat.general[random(1, getn(allSimcityChat.general))])
 				end
 			end
 		end
@@ -1115,8 +1117,11 @@ function GroupFighter:Breath(nListId)
 		end
 
 
+		local myLife = NPCINFO_GetNpcCurrentLife(tbNpc.finalIndex)
+		local maxLife = NPCINFO_GetNpcCurrentMaxLife(tbNpc.finalIndex)
+
 		-- Case 2: some player around is fighting and different camp, we join
-		if (tbNpc.CHANCE_ATTACK_PLAYER and random(0, tbNpc.CHANCE_ATTACK_PLAYER) <= 2)
+		if ((tbNpc.CHANCE_ATTACK_PLAYER and random(0, tbNpc.CHANCE_ATTACK_PLAYER) <= 2) or (myLife < maxLife))
 		then
 			if self:JoinFightPlayerCheck(nListId, nNpcIndex) == 1 then
 				return 1
@@ -1446,7 +1451,9 @@ function GroupFighter:ChildrenAdd(nListId, childID)
 			else
 				-- Do magic on this NPC
 				if (tbNpc.isFighting == 0) then
-					SetNpcKind(nNpcIndex, tbNpc.kind or 4)
+					-- TODO An hien
+					-- SetNpcKind(nNpcIndex, tbNpc.kind or 4)
+					SetNpcKind(nNpcIndex, 0)
 				end
 
 				-- Choose side
@@ -1467,8 +1474,8 @@ function GroupFighter:ChildrenAdd(nListId, childID)
 					SimCityNgoaiTrang:makeup(child, nNpcIndex)
 				end
 
-				if tbNpc.cap and tbNpc.cap < 2 and NPCINFO_SetNpcCurrentLife then
-					local maxHP = SimCityNPCInfo:getHPByCap(tbNpc.cap)
+				if tbNpc.capHP and tbNpc.capHP < 2 and NPCINFO_SetNpcCurrentLife then
+					local maxHP = SimCityNPCInfo:getHPByCap(tbNpc.capHP)
 					NPCINFO_SetNpcCurrentMaxLife(nNpcIndex, maxHP)
 					NPCINFO_SetNpcCurrentLife(nNpcIndex, maxHP)
 				end
@@ -1714,7 +1721,7 @@ function _sortByScore(tb1, tb2)
 end
 
 function GroupFighter:_calculateFightingScore(tbNpc, nNpcIndex, currRank)
-	local allNpcs, nCount = Simcity_GetNpcAroundNpcList(nNpcIndex, 15)
+	local allNpcs, nCount = GetNpcAroundNpcList(nNpcIndex, 15)
 	local foundTbNpcs = {}
 
 	if nCount > 0 then

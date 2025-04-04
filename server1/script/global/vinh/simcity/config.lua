@@ -3,13 +3,17 @@ CHANCE_ATTACK_NPC = 3000     -- 1/3000 co hoi tham gia danh nhau khi di ngang qu
 CHANCE_ATTACK_PLAYER = 2000  -- 1/3000 co hoi danh nguoi neu den gan nguoi choi dang chien dau
 
 STARTUP_AUTOADD_THANHTHI = 1 -- tu dong moi nhan si tren tat ca ban do
+THANHTHI_SIZE = 200    		 -- so luong nhan si trong thanh thi
+THANHTHI_QUAI = 0			 -- co cho phep quai nhan tu dong xuat hien trong thanh thi hay khong
 
 RADIUS_FIGHT_PLAYER = 8      -- tam quet nguoi choi chung quanh va tan cong
 RADIUS_FIGHT_NPC = 8         -- tam quet NPC chung quanh va tan cong
 RADIUS_FIGHT_SCAN = 8        -- tam quet dam danh nhau chung quanh de tham gia
 
 
-CHANCE_CHAT = 200 -- 1/200 co hoi noi chuyen
+CHANCE_CHAT = 10               -- 10/1000 co hoi noi chuyen moi giay
+CHANCE_DROP_MONEY = 1 		   -- 1/10000 co hoi lam rot tien khi duy chuyen
+
 
 TIME_FIGHTING = { -- khoang thoi gian danh nhau  (45-120giay)
 	minTs = 45,
@@ -37,3 +41,4 @@ DISTANCE_FOLLOW_PLAYER = 10        -- chay theo nguoi choi neu cach xa
 DISTANCE_SUPPORT_PLAYER = 8        -- neu gan nguoi choi khoang cach 12 thi chuyen sang chien dau
 DISTANCE_FOLLOW_PLAYER_TOOFAR = 30 -- neu qua xa nguoi choi vi chay nhanh thi phai bien hinh theo
 DISTANCE_VISION = 15               -- qua 15 = phai respawn vi no se quay ve cho cu
+
