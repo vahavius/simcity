@@ -20,18 +20,9 @@ SimCityKeoXe = {
 function createTaskSayKeoxe()
 	local tbOpt = {}
 	local nSettingIdx = 103
-	local nActionId = 0
-	tinsert(tbOpt, 1, "<dec><link=image[0,8]:#npcspr:?NPCSID="..tostring(nSettingIdx).."?ACTION="..tostring(nActionId)..">V« Kþ ca:<link> Nh©n sinh nh­ méng, tr­êng l­u v« tËn, gÆp gì chØ lµ tho¸ng qua");
+	local nActionId = 1
+	tinsert(tbOpt, 1, "<dec><link=image[0,14]:#npcspr:?NPCSID="..tostring(nSettingIdx).."?ACTION="..tostring(nActionId)..">V« Kþ ca:<link> Nh©n sinh nh­ méng, tr­êng l­u v« tËn, gÆp gì chØ lµ tho¸ng qua");
 	return tbOpt
-end
-
-function SimCityKeoXe:init()
-	if self.m_TimerId then
-		TimerList:DelTimer(self.m_TimerId)
-	end
-
-	-- Bo dong sau day neu muon di theo doi hinh
-	--self.m_TimerId = TimerList:AddTimer(self, 18)
 end
 
 function SimCityKeoXe:taoNV(id, camp, mapID, map, nt, theosau, capHP, extraConfig)
@@ -56,13 +47,12 @@ function SimCityKeoXe:taoNV(id, camp, mapID, map, nt, theosau, capHP, extraConfi
 		noRevive = 0,        -- optional: 0: keep reviving, 1: dead
 
 		CHANCE_ATTACK_PLAYER = 1, -- co hoi tan cong nguoi choi neu di ngang qua
-		attackNpcChance = 1, -- co hoi bat chien dau khi thay NPC khac phe
-		CHANCE_ATTACK_NPC = 1, -- co hoi tang cong NPC neu di ngang qua NPC danh nhau
+		CHANCE_ATTACK_NPC = 1, -- co hoi bat chien dau khi thay NPC khac phe
+		CHANCE_JOIN_FIGHT = 1, -- co hoi tang cong NPC neu di ngang qua NPC danh nhau
 		RADIUS_FIGHT_PLAYER = 15, -- scan for player around and randomly attack
 		RADIUS_FIGHT_NPC = 10, -- scan for NPC around and start randomly attack,
 		RADIUS_FIGHT_SCAN = 10, -- scan for fight around and join/leave fight it
-
-		noBackward = 1,      -- do not walk backward
+ 
 		kind = 0,            -- quai mode
 		TIME_FIGHTING_minTs = 1800,
 		TIME_FIGHTING_maxTs = 3000,
@@ -115,28 +105,16 @@ function SimCityKeoXe:nv_tudo_xe(capHP)
 		local children = {}
 		self:taoNV(pid, forCamp, pW, {}, 1, children, capHP)
 	end
-
-	self:init()
-end
-
-function SimCityKeoXe:removeAll()
-	for key, fighter in SimTheoSau.fighterList do
-		local name = GetName()
-		if fighter.playerID == name then
-			SimTheoSau:Remove(fighter.id)
-			self.collections[name] = nil
-		end
-	end
 end
 
 function SimCityKeoXe:goiAnhHungThiepNgoaiTrang()
 	local tbSay = createTaskSayKeoxe()
 
 
-	tinsert(tbSay, "S¬ cÊp/#SimCityKeoXe:nv_tudo_xe(1)")
-	tinsert(tbSay, "Trung cÊp/#SimCityKeoXe:nv_tudo_xe(2)")
-	tinsert(tbSay, "Cao cÊp/#SimCityKeoXe:nv_tudo_xe(3)")
-	tinsert(tbSay, "Siªu cÊp/#SimCityKeoXe:nv_tudo_xe(4)")
+	tinsert(tbSay, "§Ö tö tinh anh/#SimCityKeoXe:nv_tudo_xe(1)")
+	tinsert(tbSay, "Cao thñ nhÊt l­u/#SimCityKeoXe:nv_tudo_xe(2)")
+	tinsert(tbSay, "TuyÖn ®Ønh cao thñ/#SimCityKeoXe:nv_tudo_xe(3)")
+	tinsert(tbSay, "Vâ l©m chÝ t«n/#SimCityKeoXe:nv_tudo_xe(4)")
 
 	tinsert(tbSay, "Quay l¹i./#SimCityKeoXe:mainMenu()")
 	tinsert(tbSay, "KÕt thóc ®èi tho¹i./no")
@@ -185,10 +163,25 @@ function SimCityKeoXe:tao1xe(data)
 	end
 end
 
+function SimCityKeoXe:ketgiaoNgauNhien()
+	local tbSay = createTaskSayKeoxe()
+	local phai = random(1, 10)
+	local ten = SimCityNPCInfo:generateName()
+	local gen = random(1,2)
+	if phai == 2 then 
+		gen = 1
+	elseif	phai == 7 or phai == 8 then
+		gen = 2
+	end 
+	self.randomName = {ten}
+	SimCityKeoXe:taoBangHuu(phai, gen, 1)
+	return 1
+end
+
 function SimCityKeoXe:ketgiaoPhai(phai)
 	local tbSay = createTaskSayKeoxe()	
 	if phai == 0 then
-		
+		tinsert(tbSay, "Giang hå l·ng tö/#SimCityKeoXe:ketgiaoNgauNhien()")
 		tinsert(tbSay, "Thiªn V­¬ng Bang/#SimCityKeoXe:ketgiaoPhai(1)")
 		tinsert(tbSay, "ThiÕu L©m/#SimCityKeoXe:ketgiaoPhai(2)")
 		tinsert(tbSay, "Vâ §ang/#SimCityKeoXe:ketgiaoPhai(3)")
@@ -321,11 +314,25 @@ function SimCityKeoXe:mainMenu()
 	tinsert(tbSay, "KÕt giao nhãm qu¸i nh©n/#SimCityKeoXe:goiAnhHungThiep()")
 	--tinsert(tbSay, "ThiÕt lËp/#SimCityKeoXe:caidat()")
 	tinsert(tbSay, "T¹o b·i luyÖn c«ng/#SimCityKeoXe:luyencong()")
-	tinsert(tbSay, "Gi¶i t¸n/#SimCityKeoXe:removeAll()")
+	tinsert(tbSay, "Gi¶i t¸n/#SimCityKeoXe:RemoveAll()")
 	tinsert(tbSay, "KÕt thóc ®èi tho¹i./no")
 	CreateTaskSay(tbSay)
 
 	return 1
+end
+
+function SimCityKeoXe:RemoveAll()
+	local name = GetName()
+
+	if self.collections[name] then
+		self.collections[name] = nil
+	end
+	for key, fighter in SimTheoSau.fighterList do
+        local name = GetName()
+        if fighter.playerID == name then
+            self:Remove(fighter.id)
+        end
+    end
 end
 
 function SimCityKeoXe:askBaiLevel()
@@ -367,7 +374,7 @@ end
 function SimCityKeoXe:TaoBai(forceLevel)
 	-- Tam thoi xoa xe de tao NPC tu dong neu khong se copy NPC tu xe vao luon
 	if (forceLevel == 999) then
-		SimCityKeoXe:removeAll()
+		self:RemoveAll()
 	end
 
 	local fighterList = GetAroundNpcList(60)
@@ -410,7 +417,7 @@ function SimCityKeoXe:TaoBai(forceLevel)
 	return 0
 end
 
-function SimCityKeoXe:OnTime()
+function SimCityKeoXe:ATick()
 	-- Get info for npc in this world
 	for name, children in self.collections do
 		local parentID = SearchPlayer(name)
@@ -432,5 +439,4 @@ function SimCityKeoXe:OnTime()
 		end
 	end
 
-	self.m_TimerId = TimerList:AddTimer(self, 18)
 end

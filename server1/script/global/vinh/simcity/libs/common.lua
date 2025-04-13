@@ -1,4 +1,9 @@
 IncludeLib("NPCINFO")
+if not GetNpcAroundNpcList then
+    function GetNpcAroundNpcList(nNpcIndex, nRadius)
+        return {}, 0
+    end
+end
 
 -- Helpers
 function GetTabFileData(path, tab_name, start_row, max_col) -- Doc file txt
@@ -159,4 +164,41 @@ function arrRandomExtracItems(arr, n)
     end
 
     return result
+end
+
+
+function SimCityTableFromFile(strFilePatch, tbPattern)	
+	if (TabFile_Load(strFilePatch, strFilePatch) == 0) then
+		print("Load TabFile Error!"..strFilePatch)
+		return nil
+	else
+		local tbResult = {}
+		local nRowCount = TabFile_GetRowCount(strFilePatch)
+        
+		for i = 2, nRowCount do
+			tbResult[i-1] = {}
+			for j = 1, getn(tbPattern) do
+				local tmp = nil
+				if tbPattern[j] == "*n" then
+					tmp = tonumber(TabFile_GetCell(strFilePatch, i, j))
+				elseif tbPattern[j] == "*w" then
+					tmp = tostring(TabFile_GetCell(strFilePatch, i, j))
+				end
+				tinsert(tbResult[i-1], tmp)
+			end
+		end
+		return tbResult
+	end
+end
+
+function getObjectKeys(tbl)
+    local result = {}
+    for k,v in tbl do
+        tinsert(result, k)
+    end
+    return result
+end
+
+function _sortByScore(tb1, tb2)
+	return tb1[2] > tb2[2]
 end

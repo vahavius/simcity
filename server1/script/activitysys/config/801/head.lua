@@ -1,4 +1,3 @@
-Include("\\script\\global\\vinh\\main.lua")
 Include("\\script\\activitysys\\activity.lua")
 
 pActivity = ActivityClass:new()
@@ -13,8 +12,13 @@ pActivity.nVersion = 5
  
 
 function pActivity:InitAddNpc()
+	Include("\\script\\global\\vinh\\main.lua")
     simcity_addNpcs()
 end
  
 
+function pActivity:ClearTkNpc()
+	Include("\\script\\global\\vinh\\main.lua")
+    simcity_clearTongKim()
+end
 

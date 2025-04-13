@@ -10,8 +10,7 @@ function ComputeWalkGraph(worldMap)
 	
 	-- Separate exact points and normal points
 	local i, j
-	for i = 1, getn(walkPaths) do
-		local path = walkPaths[i]
+	for pathName, path in walkPaths do
 		for j = 1, getn(path) do
 			local point = path[j]
 			if point[3] and point[3] == 1 then
@@ -81,8 +80,7 @@ function ComputeWalkGraph(worldMap)
 	end
 	
 	-- Build connections between points based on original paths
-	for i = 1, getn(walkPaths) do
-		local path = walkPaths[i]
+	for pathName, path in walkPaths do
 		for j = 1, getn(path)-1 do
 			local p1 = path[j]
 			local p2 = path[j+1]
@@ -215,14 +213,10 @@ function SimCityWorld:ShowTrangTri(nW, show)
 end
 
 function SimCityWorld:initThanhThi()
-	for i=1, getn(allSimcityMap) do
-		local targetMap = self:New(allSimcityMap[i])		
+	for worldId, worldInfo in SimCityMap do
+		local targetMap = self:New(worldInfo)		
 		ComputeWalkGraph(targetMap)
 	end
-	if self.m_TimerId then
-		TimerList:DelTimer(self.m_TimerId)
-	end
-	self.m_TimerId = TimerList:AddTimer(self, 60 * 18)
 end
 
 function SimCityWorld:doShowBXH(mapID)
@@ -243,12 +237,11 @@ function SimCityWorld:IsThanhThiMap(pW)
 	return 0
 end
 
-function SimCityWorld:OnTime()
+function SimCityWorld:ATick()
 	for wId, worldInfo in self.data do
 		worldInfo.tick = worldInfo.tick + 1
 		if worldInfo.showBXH == 1 and mod(worldInfo.tick, worldInfo.announceBXHTick) == 0 then
 			self:doShowBXH(worldInfo.worldId)
 		end
 	end
-	self.m_TimerId = TimerList:AddTimer(self, 60 * 18)
 end
