@@ -3,177 +3,148 @@ Include("\\script\\global\\vinh\\simcity\\head.lua")
 Include("\\script\\battles\\marshal\\head.lua");
 
 
-SimCityMainTongKim = { camp2TopRight = 0 }
-
-
-function SimCityMainTongKim:updateCampPosition()
-	local camp1X = GetMissionV(MS_HOMEIN_X1) / 8
-	local camp1Y = GetMissionV(MS_HOMEIN_Y1) / 16
-	local camp2X = GetMissionV(MS_HOMEIN_X2) / 8
-	local camp2Y = GetMissionV(MS_HOMEIN_Y2) / 16
-
-	self.camp2TopRight = 0
-	if (camp2X > camp1X) and (camp2Y < camp1Y) then
-		self.camp2TopRight = 1
-	end
+SimCityMainTongKim = {   }
+ 
+function SimCityMainTongKim:runTongKim(level)
+	RemoteExc("\\script\\simcity.lua", "Mo_TongKim", {level})
 end
 
-function SimCityMainTongKim:xemBXH()
-	local nW, nX, nY = GetWorldPos()
-	SimCityWorld:doShowBXH(nW)
-end
+function SimCityMainTongKim:showBaoDanhTongKim(nW)
+	
+	local tbSay = createTaskSayChienTranh(nW, "")
 
-function SimCityMainTongKim:setUpMap(nW)
-	local worldInfo = SimCityWorld:Get(nW)
-	if not worldInfo.name then
-		local config = objCopy(SimCityMap[10000])
-		config.worldId = nW
-		config.name = "Tèng Kim"
-		config.decoration = {}
-		config.isTongKim = 1
-		SimCityWorld:New(config);
-		worldInfo = SimCityWorld:Get(nW)
-		worldInfo.showFightingArea = 0
-		worldInfo.showThangCap = 1
-		worldInfo.showBXH = 1
-		worldInfo.announceBXHTick = 1 -- show BXH moi 1 phut
-	end
-end
+	tinsert(tbSay, "Më Tèng Kim s¬ cÊp/#SimCityMainTongKim:runTongKim(1)")
+	tinsert(tbSay, "Më Tèng Kim trung cÊp/#SimCityMainTongKim:runTongKim(2)")
+	tinsert(tbSay, "Më Tèng Kim cao cÊp/#SimCityMainTongKim:runTongKim(3)")
 
-function SimCityMainTongKim:mainMenu()
-	SimCityMainTongKim:updateCampPosition()
-	SimCityChienTranh:modeTongKim(1, self.camp2TopRight)
-
-	local nW, nX, nY = GetWorldPos()
-	SimCityMainTongKim:setUpMap(nW)
-
-	SimCityChienTranh.nW = nW
-	local worldInfo = SimCityWorld:Get(nW)
-
-	local tbSay = createTaskSayChienTranh(nW, worldInfo.name .. " khãi löa chinh chiÕn")
-
-	tinsert(tbSay, "Ph¸t anh hïng thiÕp/#SimCityChienTranh:goiAnhHungThiepNgoaiTrang()")
-	tinsert(tbSay, "Ph¸t qu¸i nh©n thiÕp/#SimCityChienTranh:goiAnhHungThiep()")
-	tinsert(tbSay, "§iÒu ®éng qu©n binh/#SimCityChienTranh:phe_quanbinh()") 
-	tinsert(tbSay, "Xem b¶ng xÕp h¹ng/#SimCityMainTongKim:xemBXH()")
-	tinsert(tbSay, "ThiÕt lËp/#SimCityChienTranh:caidat()")
-	tinsert(tbSay, "Gi¶i t¸n/#SimCityChienTranh:removeAll()")
 	tinsert(tbSay, "KÕt thóc ®èi tho¹i./no")
 	CreateTaskSay(tbSay)
 	return 1
+
 end
 
+function SimCityMainTongKim:mainMenu()
+	local nW, nX, nY = GetWorldPos()
+	SimCityChienTranh.nW = nW
+
+	if nW == 323 or nW == 324 or nW == 325 then
+		self:showBaoDanhTongKim(nW)
+	else
+		SimCityChienTranh:mainMenu()
+	end
+	return 1
+end
+
+-- Main menu
 function main()
 	return SimCityMainTongKim:mainMenu()
 end
 
-function SimCityMainTongKim:clearTongKimNpc(targetWorld)
-	for k, world in SimCityWorld.data do
-		if world.isTongKim == 1 and (not targetWorld or world.worldId == targetWorld) then
-			SimCityChienTranh.nW = world.worldId
-			SimCityChienTranh:removeAll()
+-- Empty function for older Simcity version
+function SimCityMainTongKim:addTongKimNpc()
+end
+
+function SimCityMainTongKim:addTongKimNpcByPlayer()
+
+	local pW, pX, pY = GetWorldPos()
+	local worldInfo = SimCityWorld:Get(pW)
+	SimCityChienTranh:removeAll(SubWorldIdx2ID(pW))
+
+	-- Determine camp
+	local myCamp = GetCurCamp() 
+	local camp1X, camp1Y, camp2X, camp2Y = 0, 0, 0, 0
+	local id
+	if (myCamp == 1) then
+		camp1X = pX
+		camp1Y = pY
+		id = AddNpc(103, 1, SubWorldID2Idx(pW), (pX+random(-2,2))*32, (pY+random(-2,2))*32, 1, "V« Kþ")
+	else 
+		camp2X = pX
+		camp2Y = pY
+		id = AddNpc(1617, 1, SubWorldID2Idx(pW), (pX+random(-2,2))*32, (pY+random(-2,2))*32, 1, "TriÖu MÉn")		
+	end
+	if id > 0 then
+		SetNpcScript(id, "\\script\\global\\vinh\\simcity\\controllers\\tongkim.lua")
+	end
+
+	-- Find the nodes
+	if worldInfo.nodes then
+
+		local furthestDist = 0
+		for k,v in worldInfo.nodes do
+			local dist = GetDistanceRadius(v.x, v.y, pX, pY)
+			if dist > furthestDist then
+				furthestDist = dist
+				furthestNode = v
+			end
+		end
+
+		if (camp == 1 or myCamp == 1) then
+			camp2X = furthestNode.x
+			camp2Y = furthestNode.y
+		else 
+			camp1X = furthestNode.x
+			camp1Y = furthestNode.y
+		end		
+	end
+
+	-- Finally set it
+	SimCityChienTranh.camp2TopRight = 0
+	if (camp2X ~= 0) and (camp2Y ~= 0) and (camp2X > camp1X) and (camp2Y < camp1Y) then
+		SimCityChienTranh.camp2TopRight = 1
+	end
+
+end
+
+function SimCityMainTongKim:addTongKimOpenNpc()
+
+	local pW, pX, pY = GetWorldPos()
+	local id	
+	id = AddNpc(1617, 1, SubWorldID2Idx(pW), (pX+random(-2,2))*32, (pY+random(-2,2))*32, 1, "TriÖu MÉn")		
+	if id > 0 then
+		SetNpcScript(id, "\\script\\global\\vinh\\simcity\\controllers\\tongkim.lua")
+	end
+end
+
+function SimCityMainTongKim:onPlayerEnterMap(pW)
+	
+	local isBaoDanh = 0 
+	if pW == 323 or pW == 324 or pW == 325 then
+		isBaoDanh = 1
+	end
+
+	-- Check if there is a Trieu Man or Vo Ky in the map
+	local fighterList = GetAroundNpcList(isBaoDanh and 16 or 50)
+
+	local tmpFound
+	local nNpcIdx
+
+	for i = 1, getn(fighterList) do
+		nNpcIdx = fighterList[i]
+		local script = GetNpcScript(nNpcIdx)
+		local kind = GetNpcKind(nNpcIdx)
+
+		-- Neu da add roi thi thoi
+		if kind == 3 and script == "\\script\\global\\vinh\\simcity\\controllers\\tongkim.lua" then
+			return 1
+		end
+
+		if kind == 3 then
+			if strfind(script, "transport.lua") or strfind(script, "doctor.lua") then
+				tmpFound = nNpcIdx
+			end
 		end
 	end
-end
 
-function SimCityMainTongKim:addTongKimNpc()
-	SimCityMainTongKim:updateCampPosition()
-
-	local vokyTienTuyen = { 1343 * 32, 3410 * 32 }
-	local vokyHauPhuong = { 1241 * 32, 3549 * 32 }
-
-	local trieumanTienTuyen = { 1541 * 32, 3200 * 32 }
-	local trieumanHauPhuong = { 1688 * 32, 3072 * 32 }
-
-
-	local vitriTrieuMan = {
-		tientuyen = {},
-		hauphuong = {},
-		id = 1617
-	}
-
-	local vitriVoKy = {
-		tientuyen = {},
-		hauphuong = {},
-		id = 103
-	}
-
-
-	if self.camp2TopRight == 1 then
-		vitriTrieuMan.tientuyen = trieumanTienTuyen
-		vitriTrieuMan.hauphuong = trieumanHauPhuong
-		vitriVoKy.tientuyen = vokyTienTuyen
-		vitriVoKy.hauphuong = vokyHauPhuong
-	else
-		vitriTrieuMan.tientuyen = vokyTienTuyen
-		vitriTrieuMan.hauphuong = vokyHauPhuong
-		vitriVoKy.tientuyen = trieumanTienTuyen
-		vitriVoKy.hauphuong = trieumanHauPhuong
+	-- Neu la dia diem bao danh thi them vao Trieu Man va Vo Ky
+	if isBaoDanh == 1 then
+		return SimCityMainTongKim:addTongKimOpenNpc()
+	end
+	
+	-- Neu tim thay Quan Nhu Quan thi them vao Trieu Man va Vo Ky
+	if tmpFound then
+		SimCityMainTongKim:addTongKimNpcByPlayer()
 	end
 
-
-	-- Hau doanh
-	id = bt_add_a_diagnpc("\\script\\global\\vinh\\simcity\\controllers\\tongkim.lua", 1617, vitriTrieuMan.hauphuong[1],
-		vitriTrieuMan.hauphuong[2], "TriÖu MÉn")
-	id = bt_add_a_diagnpc("\\script\\global\\vinh\\simcity\\controllers\\tongkim.lua", 103, vitriVoKy.hauphuong[1],
-		vitriVoKy.hauphuong[2], "V« Kþ")
-
-
-	local offSetUnit1 = 4 * 32
-	local offSetUnit2 = 4 * 32
-
-	-- Tien tuyen
-	local id = 0
-	local nX = 0
-	local nY = 0
-	local nW = 0
-
-	-- Trieu man
-	id = bt_add_a_diagnpc("\\script\\global\\vinh\\simcity\\controllers\\tongkim.lua", 1617, vitriTrieuMan.tientuyen[1],
-		vitriTrieuMan.tientuyen[2], "TriÖu MÉn")
-
-	-- Bao ve cho Trieu Man
-	nX, nY, nW = GetNpcPos(id)
-
-
-	id = AddNpcEx(1702, 95, random(0, 4), nW, nX - offSetUnit1, nY + offSetUnit2, 1, "A NhÊt (b¶o vÖ TriÖu MÉn)", 0)
-	SetNpcCurCamp(id, 2)
-
-	id = AddNpcEx(1939, 95, random(0, 4), nW, nX, nY + offSetUnit2, 1, "A NhÞ (b¶o vÖ TriÖu MÉn)", 0)
-	SetNpcCurCamp(id, 2)
-
-	id = AddNpcEx(1854, 95, random(0, 4), nW, nX + offSetUnit1, nY + offSetUnit2, 1, "A Tam (b¶o vÖ TriÖu MÉn)", 0)
-	SetNpcCurCamp(id, 2)
-
-	id = bt_add_a_diagnpc("\\script\\global\\vinh\\simcity\\controllers\\tongkim.lua", 103, vitriVoKy.tientuyen[1],
-		vitriVoKy.tientuyen[2], "V« Kþ")
-
-	-- Bao ve cho Vo Ky
-	nX, nY, nW = GetNpcPos(id)
-	id = AddNpcEx(1789, 95, random(0, 4), nW, nX - offSetUnit1, nY + offSetUnit2, 1, "V­¬ng Tiªu (b¶o vÖ V« Kþ)", 0)
-	SetNpcCurCamp(id, 1)
-
-	id = AddNpcEx(1683, 95, random(0, 4), nW, nX, nY + offSetUnit2, 1, "Chu ChØ Nh­îc (b¶o vÖ V« Kþ)", 0)
-	SetNpcCurCamp(id, 1)
-
-	id = AddNpcEx(1941, 95, random(0, 4), nW, nX + offSetUnit1, nY + offSetUnit2, 1, "TiÓu Chiªu (b¶o vÖ V« Kþ)", 0)
-	SetNpcCurCamp(id, 1)
-
-
 end
 
-function SimCityMainTongKim:onPlayerEnterMap()
-	if TONGKIM_AUTOCREATE and TONGKIM_AUTOCREATE == 1 then
-		local nW, nX, nY = GetWorldPos()
-		SimCityMainTongKim:setUpMap(nW)
-
-		SimCityChienTranh.nW = nW
-		self:updateCampPosition()
-		SimCityChienTranh:modeTongKim(1, self.camp2TopRight)		
-		
-		self:clearTongKimNpc(nW)
-		SimCityTongKim.playerInTK[nW] = {}
-		
-		SimCityChienTranh:nv_tudo(1)
-	end
-end

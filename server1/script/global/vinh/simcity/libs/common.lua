@@ -180,9 +180,19 @@ function SimCityTableFromFile(strFilePatch, tbPattern)
 			for j = 1, getn(tbPattern) do
 				local tmp = nil
 				if tbPattern[j] == "*n" then
-					tmp = tonumber(TabFile_GetCell(strFilePatch, i, j))
+                    local cell = TabFile_GetCell(strFilePatch, i, j)
+                    if cell == nil or cell == "" then
+                        tmp = 0
+                    else
+                        tmp = tonumber(cell)
+                    end
 				elseif tbPattern[j] == "*w" then
-					tmp = tostring(TabFile_GetCell(strFilePatch, i, j))
+                    local cell = TabFile_GetCell(strFilePatch, i, j)
+                    if cell == nil or cell == "" then
+                        tmp = ""
+                    else
+                        tmp = tostring(cell)
+                    end
 				end
 				tinsert(tbResult[i-1], tmp)
 			end
@@ -201,4 +211,42 @@ end
 
 function _sortByScore(tb1, tb2)
 	return tb1[2] > tb2[2]
+end
+
+
+function getClosestNode(nodes, nX, nY)
+    local minDist1 = 200
+    local closestNode1 = nil
+
+    for nodeName, coords in nodes do
+        local dist = GetDistanceRadius(nX, nY, coords[1], coords[2])
+        if dist < minDist1 then
+            minDist1 = dist
+            closestNode1 = nodeName
+        end
+    end
+    return closestNode1
+end
+
+
+function nodeNameToCoords(nodeName)
+    local point = split(nodeName, "_")
+    local x = tonumber(point[1])
+    local y = tonumber(point[2])
+    return x, y
+end
+
+function getNodeInfoByNodeName(tbNpc, nodeName)
+    if tbNpc.worldInfo.nodes[nodeName] then        
+        return tbNpc.worldInfo.nodes[nodeName]
+    end
+    local x, y = nodeNameToCoords(nodeName)
+    return {
+        x = x,
+        y = y,
+        isNearAtraction = 0,
+        linkedNodes = {},
+        isNearAtraction = 0,
+        
+    }
 end

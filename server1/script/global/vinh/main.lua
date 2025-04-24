@@ -14,14 +14,19 @@ function simcity_addNpcs()
 		{103,78,1619,3251,"\\script\\global\\vinh\\simcity\\controllers\\keoxe.lua","V« Kþ"}, 
 	})
 
+	-- VatNuoi: them VatNuoi o TuongDuong
+	SimCityVatNuoi:addNpcs()
+
 	-- Event sys when user enter/leave map
-	EventSys:GetType("EnterMap"):Reg("ALL", SimCityMainThanhThi.onPlayerEnterMap, SimCityMainThanhThi)
-	EventSys:GetType("LeaveMap"):Reg("ALL", SimCityMainThanhThi.onPlayerExitMap, SimCityMainThanhThi)
-
-
+	for id, map in SimCityMap do
+		EventSys:GetType("EnterMap"):Reg(id, SimCityMainThanhThi.onPlayerEnterMap, SimCityMainThanhThi)
+		EventSys:GetType("LeaveMap"):Reg(id, SimCityMainThanhThi.onPlayerExitMap, SimCityMainThanhThi)
+		EventSys:GetType("EnterMap"):Reg(id, SimCityVatNuoi.onPlayerEnterMap, SimCityVatNuoi)		
+	end
+	
 
 end
 
 function simcity_clearTongKim()
-	SimCityMainTongKim:clearTongKimNpc()
+	SimCityChienTranh:removeAll()
 end

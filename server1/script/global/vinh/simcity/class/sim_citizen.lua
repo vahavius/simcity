@@ -4,6 +4,8 @@ SimCitizen = objCopy(SimCore)
 SimCitizen.fighterList = {}  -- Override with own list
 SimCitizen.counter = 1
 SimCitizen.removedIds = {}
+SimCitizen.currentProcessGroup = 1 -- Add current group counter
+SimCitizen.totalFighters = 0 -- Track total fighters
 
 function SimCitizen:New(fighter)
 
@@ -18,11 +20,18 @@ function SimCitizen:New(fighter)
         self.counter = self.counter + 1
     end
 
+    -- Increment total fighters
+    self.totalFighters = self.totalFighters + 1
+    
+    -- Assign to group 1 or 2 evenly
+    local processGroup = (mod(self.totalFighters, 2) + 1)
+
     local tbNpc = {
         id = nListId,
         children = nil,
         worldInfo = SimCityWorld:Get(fighter.nMapId),
-        last2VisitedEdges = {} -- Track last visited edges for more natural movement
+        last2VisitedEdges = {}, -- Track last visited edges for more natural movement
+        processGroup = processGroup -- Alternate between group 1 and 2
     }
 
     -- Check if worldInfo is nil
@@ -33,16 +42,6 @@ function SimCitizen:New(fighter)
 
     for k, v in fighter do
         tbNpc[k] = v
-    end
-
-    -- Check if walkGraph is nil
-    if (tbNpc.role == "citizen" and tbNpc.worldInfo.walkGraph == nil) then
-        return nil
-    end
-
-    -- Initialize foundDialogNpcOnPaths in worldInfo if it doesn't exist
-    if tbNpc.worldInfo.walkPaths and not tbNpc.worldInfo.foundDialogNpcOnPaths then
-        tbNpc.worldInfo.foundDialogNpcOnPaths = {}
     end
 
     
@@ -64,13 +63,8 @@ function SimCitizen:New(fighter)
         return nil
     end
 
-    -- Bugfix series
-    if tbNpc.series == nil then
-        tbNpc.series = random(0,4)
-    end
-
     -- Create the character on screen
-    local canCreate = tbNpc.entitySys:CreateChar(self, tbNpc, 1, tbNpc.goX, tbNpc.goY)
+    local canCreate = tbNpc.entitySys:CreateChar(self, tbNpc, 1, tbNpc.goX32, tbNpc.goY32)
     if canCreate == 0 then
         return nil
     end
@@ -89,13 +83,19 @@ function SimCitizen:initChildrenConfig(nListId, parentConfig)
         local createdChildren = {}
 
         local nX32, nY32, nW32 = GetNpcPos(tbNpc.finalIndex)
-        local nW = SubWorldIdx2ID(nW32)
-        local nX = nX32 / 32
-        local nY = nY32 / 32
+        local nW = SubWorldIdx2ID(nW32) 
 
         -- Create children
         for i = 1, getn(tbNpc.childrenSetup) do
             local childConfig = objCopy(parentConfig)
+
+            -- Do not inherit faction, series, settingsIdx, skillHoTro
+            childConfig.faction = nil
+            childConfig.series = nil
+            childConfig.nSettingsIdx = nil
+            childConfig.skillHoTro = nil
+            
+            -- Setup parents
             childConfig.parentID = tbNpc.id
             childConfig.childID = i
             childConfig.role = "child"
@@ -104,8 +104,8 @@ function SimCitizen:initChildrenConfig(nListId, parentConfig)
             for k, v in tbNpc.childrenSetup[i] do
                 childConfig[k] = v
             end
-            childConfig.goX = nX
-            childConfig.goY = nY
+            childConfig.goX32 = nX32
+            childConfig.goY32 = nY32
             local childId = self:New(childConfig)
             tinsert(createdChildren, childId)
         end

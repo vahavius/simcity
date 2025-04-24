@@ -27,23 +27,22 @@ TIME_RESTING = { -- nghi ngoi, khong danh nhau lai trong vong thoi gian nay
 }
 
 -- TONG KIM setup
-TONGKIM_AUTOCREATE = 1            	-- if 1, auto add NPC to tongkim
-TONGKIM_SPAWN_MINSTAY = 10          -- thoi gian toi thieu o lai dai doanh truoc khi xong len
-TONGKIM_SPAWN_MAXSTAY = 60          -- thoi gian toi da co the nup trong dai doanh
+TONGKIM_SPAWN_MINSTAY = 5          -- thoi gian toi thieu o lai dai doanh truoc khi xong len
+TONGKIM_SPAWN_MAXSTAY = 30         -- thoi gian toi da co the nup trong dai doanh
 
 
 -- PARAM setup
 PARAM_LIST_ID = 1                  -- param to store fighter id
 PARAM_CHILD_ID = 2                 -- param to store child id
 PARAM_TYPE = 3                     -- param to store type
-REFRESH_RATE = 9                   -- refresh rate
+REFRESH_RATE = 18                  -- refresh rate
 
 -- CHILD SIM CITIZEN/KEOXE setup
 DISTANCE_CAN_CONTINUE = 5          -- start next position if within 3 points from destination
 DISTANCE_CAN_SPIN = 2              -- when spinning make sure the check is tighter
 SPINNING_WAIT_TIME = 0             -- wait time to correct position
 CHAR_SPACING = 1                   -- spacing between fighter characters
-DISTANCE_FOLLOW_PLAYER = 10        -- chay theo nguoi choi neu cach xa
+DISTANCE_FOLLOW_PLAYER = 16        -- chay theo nguoi choi neu cach xa
 DISTANCE_SUPPORT_PLAYER = 8        -- neu gan nguoi choi khoang cach 12 thi chuyen sang chien dau
 DISTANCE_FOLLOW_PLAYER_TOOFAR = 30 -- neu qua xa nguoi choi vi chay nhanh thi phai bien hinh theo
 DISTANCE_VISION = 15               -- qua 15 = phai respawn vi no se quay ve cho cu

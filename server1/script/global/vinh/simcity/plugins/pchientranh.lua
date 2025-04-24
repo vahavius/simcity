@@ -5,94 +5,94 @@ SimCityChienTranh = {
 	path1 = {},
 	path2 = {},
 
-	tongkim = 0,
-	tongkim_camp2TopRight = 0
+	camp2TopRight = 0
 }
 
 function createTaskSayChienTranh(mapId, extra)
+
+	local worldInfo = SimCityWorld:Get(mapId)
 	local tbOpt = {}
 	local nSettingIdx = 1617
 	local nActionId = 0
 	if not extra then
 		extra = ""
+	end 
+
+	local showVoKy = 0
+	if worldInfo.isTongKim == 1 then
+		local camp = GetCurCamp()
+		if camp and camp == 1 then
+			showVoKy = 1
+		end
 	end
-	local counter = SimCityMainThanhThi:countMap(mapId)
-	tinsert(tbOpt, 1, "<dec><link=image[8,15]:#npcspr:?NPCSID="..tostring(nSettingIdx).."?ACTION="..tostring(nActionId)..">TriÖu MÉn:<link> ThiÕp vèn kh«ng ph¶i ng­êi tèt, nh­ng thiÕp ®èi víi chµng... ch­a tõng gian dèi." .. extra .. "<enter><enter><color=yellow>Nh©n sè hiÖn t¹i: " .. counter .. "<color>");
+
+	-- Show it
+	if showVoKy == 1 then
+		nSettingIdx = 103
+		tinsert(tbOpt, 1, "<dec><link=image[8,15]:#npcspr:?NPCSID="..tostring(nSettingIdx).."?ACTION="..tostring(nActionId)..">V« Kþ:<link> Ng­êi H¸n lu«n cho r»ng ng­êi Kim lµ d· man, nh­ng ng­¬i cã biÕt chiÕn tranh b¾t ®Çu tõ ®©u kh«ng?" .. extra);
+	else
+		tinsert(tbOpt, 1, "<dec><link=image[8,15]:#npcspr:?NPCSID="..tostring(nSettingIdx).."?ACTION="..tostring(nActionId)..">TriÖu MÉn:<link> Ng­êi H¸n c¸c ng­¬i lu«n cho r»ng ng­êi Kim chóng ta lµ d· man, nh­ng c¸c ng­¬i cã biÕt chiÕn tranh b¾t ®Çu tõ ®©u kh«ng?" .. extra);
+	end
+
 	return tbOpt
 end
 
-function SimCityChienTranh:modeTongKim(enable, camp2TopRight)
-	self.tongkim = enable
-	self.tongkim_camp2TopRight = camp2TopRight
-end
-
-function SimCityChienTranh:genWalkPath_tongkim(forCamp)
-	local path1 = { "huong1phai", "huong1trai", "huong1giua" }
-	local path2 = { "huong2phai", "huong2trai", "huong2giua" }
-
+function SimCityChienTranh:getCampDirection(forCamp)
 	local campDirection = 0
-	if (self.tongkim_camp2TopRight == 1 and forCamp == 1) then
+	if (self.camp2TopRight == 1 and forCamp == 1) then
 		campDirection = 1
 	end
 
-	if (self.tongkim_camp2TopRight == 1 and forCamp == 2) then
+	if (self.camp2TopRight == 1 and forCamp ~= 1) then
 		campDirection = 0
 	end
 
-	if (self.tongkim_camp2TopRight == 0 and forCamp == 1) then
+	if (self.camp2TopRight == 0 and forCamp == 1) then
 		campDirection = 0
 	end
 
-	if (self.tongkim_camp2TopRight == 0 and forCamp == 2) then
+	if (self.camp2TopRight == 0 and forCamp ~= 1) then
 		campDirection = 1 -- 1 = bottom to top
 	end
+	return campDirection
+end
 
-	-- Bottom to top
+function SimCityChienTranh:genWalkPath(forCamp) 
+	local worldInfo = SimCityWorld:Get(self.nW)
+
+	local path1 = worldInfo.chienTranhPaths
+	-- Duoi len tren
 	local myPath = {}
+	local campDirection = self:getCampDirection(forCamp)
 	if (campDirection == 1) then
-		local firstPath = path1[random(1, getn(path1))]
-		local secondPath = path2[random(1, getn(path2))]	
-		tinsert(myPath, { "camp2spawn", 0 })
-		tinsert(myPath, {firstPath, 1})
-		tinsert(myPath, {secondPath, 1})
-		tinsert(myPath, { "huong2tt", 1 })
+		local mainPath = path1[random(1, getn(path1))]
+		local mySpawn = "campduoi"
+		local theirSpawn = "camptren"
+		tinsert(myPath, { mySpawn, 0 })
+		tinsert(myPath, { mainPath, 1})
+		tinsert(myPath, { theirSpawn, 1 })
 
-		-- Top to bottom
+	-- Tren xuong duoi
 	else
-		local firstPath = path2[random(1, getn(path1))]
-		local secondPath = path1[random(1, getn(path2))]	
-		tinsert(myPath, { "camp1spawn", 0 })
-		tinsert(myPath, {firstPath, -1})
-		tinsert(myPath, {secondPath, -1})
-		tinsert(myPath, { "huong1tt", 1 })
+ 		local mainPath = path1[random(1, getn(path1))]
+		local mySpawn = "camptren"
+		local theirSpawn = "campduoi"
+		tinsert(myPath, { mySpawn, 0 })
+		tinsert(myPath, {mainPath, -1})
+		tinsert(myPath, { theirSpawn, 1 })
 	end 
+ 
 	return myPath
 end
-
+ 
  
 
-
-function SimCityChienTranh:genWalkPath(forCamp)
-	if (self.tongkim == 1) then
-		return self:genWalkPath_tongkim(forCamp)
-	end
-	-- Bottom to top
-	if (forCamp == 1) then
-		return {{self.path1[random(1, getn(self.path1))],1}}
-	end
-
-	if (forCamp == 2) then
-		return {{self.path2[random(1, getn(self.path2))],1}}
-	end
-
-	return nil
-end
-
-function SimCityChienTranh:taoNV(id, camp, mapID, walkPathNames, nt, theosau, capHP, extraConfig)
+function SimCityChienTranh:taoNV(id, camp, worldInfo, walkPathNames, nt, theosau, capHP, extraConfig)
 	if not walkPathNames then
 		return nil
 	end
 
+	local mapID = worldInfo.worldId
 	local name = "Kim"
 	local rank = 1
 	local realCamp = 5
@@ -102,12 +102,10 @@ function SimCityChienTranh:taoNV(id, camp, mapID, walkPathNames, nt, theosau, ca
 	end
 
 	local hardsetName = (nt == 1 and SimCityNPCInfo:generateName()) or SimCityNPCInfo:getName(id)
-	if self.tongkim == 1 then
+	if worldInfo.isTongKim == 1 then
 		realCamp = camp
 		hardsetName = (nt == 1 and SimCityNPCInfo:generateName()) or nil
 	end
-
-
 
 	local tbNpc = {
 		mode = "chiendau",
@@ -142,7 +140,7 @@ function SimCityChienTranh:taoNV(id, camp, mapID, walkPathNames, nt, theosau, ca
 
 		resetPosWhenRevive = 1,
 
-		tongkim = self.tongkim,
+		tongkim = 1,
 		tongkim_name = name,
 
 		ngoaitrang = nt or 0,
@@ -164,7 +162,7 @@ function SimCityChienTranh:taoNV(id, camp, mapID, walkPathNames, nt, theosau, ca
 	return SimCitizen:New(tbNpc)
 end
 
-function SimCityChienTranh:taodoi(thonglinh, camp, mapID, walkPathNames, children5)
+function SimCityChienTranh:taodoi(thonglinh, camp, worldInfo, walkPathNames, children5)
 	if not walkPathNames then
 		return nil
 	end
@@ -184,15 +182,16 @@ function SimCityChienTranh:taodoi(thonglinh, camp, mapID, walkPathNames, childre
 		end
 	end
 
-	if self.tongkim == 1 then
+	if worldInfo.isTongKim == 1 then
 		realCamp = camp
 	end
 
+	local mapID = worldInfo.worldId
 
 	return SimCitizen:New({
 		mode = "chiendau",
 		szName = name or "",
-		tongkim = self.tongkim,
+		tongkim = 1,
 
 		nNpcId = thonglinh, -- required, main char ID
 		nMapId = mapID,     -- required, map
@@ -225,7 +224,8 @@ function SimCityChienTranh:taodoi(thonglinh, camp, mapID, walkPathNames, childre
 end
 
 function SimCityChienTranh:taophe(nW, camp, linhthuong1, linhthuong2, hieuuy, photuong, daituong, nguyensoai, kybinh)
-	self:taodoi(nguyensoai, camp, nW, self:genWalkPath(camp), {
+	local worldInfo = SimCityWorld:Get(nW)
+	self:taodoi(nguyensoai, camp, worldInfo, self:genWalkPath(camp), {
 		{ linhthuong1, 20 },
 		{ linhthuong2, 20 },
 		{ hieuuy,      4 },
@@ -234,32 +234,32 @@ function SimCityChienTranh:taophe(nW, camp, linhthuong1, linhthuong2, hieuuy, ph
 	})
 
 	-- Team thuong
-	self:taodoi(hieuuy, camp, nW, self:genWalkPath(camp), {
+	self:taodoi(hieuuy, camp, worldInfo, self:genWalkPath(camp), {
 		{ linhthuong1, 20 },
 		{ linhthuong2, 20 }
 	})
 
-	self:taodoi(kybinh, camp, nW, self:genWalkPath(camp), {
+	self:taodoi(kybinh, camp, worldInfo, self:genWalkPath(camp), {
 		{ kybinh, 6 },
 	})
 
 
-	self:taodoi(linhthuong2, camp, nW, self:genWalkPath(camp), {
+	self:taodoi(linhthuong2, camp, worldInfo, self:genWalkPath(camp), {
 		{ linhthuong1, 16 },
 	})
 
-	self:taodoi(photuong, camp, nW, self:genWalkPath(camp), {
+	self:taodoi(photuong, camp, worldInfo, self:genWalkPath(camp), {
 		{ linhthuong2, 16 },
 		{ hieuuy,      12 }
 	})
 
-	self:taodoi(hieuuy, camp, nW, self:genWalkPath(camp), {
+	self:taodoi(hieuuy, camp, worldInfo, self:genWalkPath(camp), {
 		{ linhthuong1, 16 },
 	})
 
 
 	-- Team nguyen soai
-	self:taodoi(nguyensoai, camp, nW, self:genWalkPath(camp), {
+	self:taodoi(nguyensoai, camp, worldInfo, self:genWalkPath(camp), {
 		{ linhthuong1, 20 },
 		{ linhthuong2, 20 },
 		{ hieuuy,      4 },
@@ -268,44 +268,47 @@ function SimCityChienTranh:taophe(nW, camp, linhthuong1, linhthuong2, hieuuy, ph
 	})
 
 	-- Team thuong
-	self:taodoi(hieuuy, camp, nW, self:genWalkPath(camp), {
+	self:taodoi(hieuuy, camp, worldInfo, self:genWalkPath(camp), {
 		{ linhthuong1, 20 },
 		{ linhthuong2, 20 }
 	})
 
-	self:taodoi(kybinh, camp, nW, self:genWalkPath(camp), {
+	self:taodoi(kybinh, camp, worldInfo, self:genWalkPath(camp), {
 		{ kybinh, 6 },
 	})
 
 
-	self:taodoi(linhthuong2, camp, nW, self:genWalkPath(camp), {
+	self:taodoi(linhthuong2, camp, worldInfo, self:genWalkPath(camp), {
 		{ linhthuong1, 16 },
 	})
 
-	self:taodoi(photuong, camp, nW, self:genWalkPath(camp), {
+	self:taodoi(photuong, camp, worldInfo, self:genWalkPath(camp), {
 		{ linhthuong2, 16 },
 		{ hieuuy,      12 }
 	})
 
 
-	self:taodoi(hieuuy, camp, nW, self:genWalkPath(camp), {
+	self:taodoi(hieuuy, camp, worldInfo, self:genWalkPath(camp), {
 		{ linhthuong1, 16 },
 	})
 
 
-	self:taodoi(hieuuy, camp, nW, self:genWalkPath(camp), {
+	self:taodoi(hieuuy, camp, worldInfo, self:genWalkPath(camp), {
 		{ linhthuong1, 16 },
 	})
 end
 
 function SimCityChienTranh:phe_tudo(startNPCIndex, perPage, ngoaitrang)
-	self:TaoTongKimSpawn(ngoaitrang or 0)
+	self:taoHauDoanh(ngoaitrang or 0)
+
+	local worldInfo = SimCityWorld:Get(self.nW)
+
 	local forCamp = 1
 	for i = 0, perPage do
 		local id = startNPCIndex + i
 		local myPath = self:genWalkPath(forCamp)
 
-		local fighter = self:taoNV(id, forCamp, self.nW, myPath, ngoaitrang or 0)
+		local fighter = self:taoNV(id, forCamp, worldInfo, myPath, ngoaitrang or 0)
 		if fighter then
 			if forCamp == 1 then
 				forCamp = 2
@@ -317,7 +320,9 @@ function SimCityChienTranh:phe_tudo(startNPCIndex, perPage, ngoaitrang)
 end
 
 function SimCityChienTranh:phe_tudo_xe(startNPCIndex, perPage, ngoaitrang)
-	self:TaoTongKimSpawn(ngoaitrang or 0)
+	self:taoHauDoanh(ngoaitrang or 0)
+
+	local worldInfo = SimCityWorld:Get(self.nW)
 
 	local forCamp = 1
 
@@ -351,7 +356,7 @@ function SimCityChienTranh:phe_tudo_xe(startNPCIndex, perPage, ngoaitrang)
 		end
 
 
-		self:taoNV(pid, forCamp, self.nW, myPath, ngoaitrang or 0, children, nil, {
+		self:taoNV(pid, forCamp, worldInfo, myPath, ngoaitrang or 0, children, nil, {
 			childrenWalkMode = "random"
 		})
 
@@ -362,7 +367,9 @@ function SimCityChienTranh:phe_tudo_xe(startNPCIndex, perPage, ngoaitrang)
 end
 
 function SimCityChienTranh:nv_tudo(capHP)
-	self:TaoTongKimSpawn(1)
+	self:taoHauDoanh(1)
+
+	local worldInfo = SimCityWorld:Get(self.nW)
 
 	local forCamp = 1
 
@@ -373,7 +380,7 @@ function SimCityChienTranh:nv_tudo(capHP)
 		local id = pool[random(1, getn(pool))]
 		local myPath = self:genWalkPath(forCamp)
 
-		local fighter = self:taoNV(id, forCamp, self.nW, myPath, 1, nil, capHP)
+		local fighter = self:taoNV(id, forCamp, worldInfo, myPath, 1, nil, capHP)
 		if fighter then
 			if forCamp == 1 then
 				forCamp = 2
@@ -386,10 +393,12 @@ function SimCityChienTranh:nv_tudo(capHP)
 end
 
 function SimCityChienTranh:nv_tudo_xe(capHP)
-	self:TaoTongKimSpawn(1)
+	self:taoHauDoanh(1)
 
 	local forCamp = 1
 	local pool = SimCityNPCInfo:getPoolByCap(capHP)
+
+	local worldInfo = SimCityWorld:Get(self.nW)
 
 	for i = 1, 10 do
 		local pid = pool[random(1, getn(pool))]
@@ -415,7 +424,7 @@ function SimCityChienTranh:nv_tudo_xe(capHP)
 		end
 
 
-		self:taoNV(pid, forCamp, self.nW, myPath, 1, children, capHP, {
+		self:taoNV(pid, forCamp, worldInfo, myPath, 1, children, capHP, {
 			childrenWalkMode = "random"
 		})
 
@@ -442,8 +451,13 @@ function SimCityChienTranh:phe_quanbinh()
 	self:taophe(self.nW, camp, linh, linh + 1, linh + 2, linh + 3, linh + 4, linh + 5, kybinh)
 end
 
-function SimCityChienTranh:removeAll()
-	SimCitizen:ClearMap(self.nW, "chiendau")
+function SimCityChienTranh:removeAll(targetWorld)
+	for k, world in SimCityWorld.data do
+		if (not targetWorld or world.worldId == targetWorld) then
+			self.nW = world.worldId
+			SimCitizen:ClearMap(self.nW, "chiendau")
+		end
+	end
 end
 
 function SimCityChienTranh:getWorldName()
@@ -458,8 +472,25 @@ function SimCityChienTranh:getWorldName()
 	return { worldInfo.name .. " ChiÕn Lo¹n<enter><color=yellow>Nh©n sè hiÖn t¹i: " .. counter }
 end
 
+
+function SimCityChienTranh:countMap(nW)
+	local counter = 0
+	for k, v in SimCitizen.fighterList do
+		if v.nMapId and v.nMapId == nW then
+			counter = counter + 1
+		end
+	end
+	return counter
+end
+
+
 function SimCityChienTranh:goiAnhHungThiepNgoaiTrang()
-	local tbSay = createTaskSayChienTranh(self.nW)
+
+	local counter = self:countMap(self.nW)
+	local extra = "<enter><enter><color=yellow>Nh©n sè hiÖn t¹i: " .. counter .. "<color>"
+
+
+	local tbSay = createTaskSayChienTranh(self.nW, extra)
 
 
 	tinsert(tbSay, "§Ö tö tinh anh (100 thiÕp)/#SimCityChienTranh:nv_tudo(1)")
@@ -483,7 +514,9 @@ function SimCityChienTranh:goiAnhHungThiepNgoaiTrang()
 end
 
 function SimCityChienTranh:goiAnhHungThiep()
-	local tbSay = createTaskSayChienTranh(self.nW)
+	local counter = self:countMap(self.nW)
+	local extra = "<enter><enter><color=yellow>Nh©n sè hiÖn t¹i: " .. counter .. "<color>"
+	local tbSay = createTaskSayChienTranh(self.nW, extra)
 
 
 
@@ -524,8 +557,9 @@ end
 
 function SimCityChienTranh:caidat()
 	local worldInfo = SimCityWorld:Get(self.nW)
-
-	local tbSay = createTaskSayChienTranh(self.nW)
+	local counter = self:countMap(self.nW)
+	local extra = "<enter><enter><color=yellow>Nh©n sè hiÖn t¹i: " .. counter .. "<color>"
+	local tbSay = createTaskSayChienTranh(self.nW, extra)
 
 
 
@@ -550,23 +584,21 @@ end
 
 function SimCityChienTranh:mainMenu()
 	local worldInfo = SimCityWorld:Get(self.nW)
+	local result = SimCityGraphToChienTranh:build(worldInfo, 32)
 
-	if (not worldInfo.chientranh) or (not worldInfo.chientranh.path1) or (not worldInfo.chientranh.path2) then
-
+	if (result == 0) then
 		local tbSay = createTaskSayThanhThi("<enter><enter>ChiÕn lo¹n t¹i b¶n ®å nµy ch­a ®­îc më. Chµng cã thÓ gëi <color=yellow>®Þa ®å chÝ<color> ®Õn t¸c gi¶ trªn fb héi qu¸n.")
 		tinsert(tbSay, "KÕt thóc ®èi tho¹i./no")
 		CreateTaskSay(tbSay)
-		return 1
-	end
+		return 1 
+ 	end
 
 	worldInfo.allowFighting = 1
 	worldInfo.showFightingArea = 0
 
-	self.path1 = worldInfo.chientranh.path1
-	self.path2 = worldInfo.chientranh.path2
-
-
-	local tbSay = createTaskSayChienTranh(self.nW)
+	local counter = self:countMap(self.nW)
+	local extra = "<enter><enter><color=yellow>Nh©n sè hiÖn t¹i: " .. counter .. "<color>"
+	local tbSay = createTaskSayChienTranh(self.nW, extra)
 	if SimCityMainThanhThi then
 		SimCityMainThanhThi:removeAll()
 	end
@@ -584,42 +616,73 @@ function SimCityChienTranh:mainMenu()
 	return 1
 end
 
-function SimCityChienTranh:TaoTongKimSpawn(ngoaitrang)
-	if self.tongkim ~= 1 then
+
+function SimCityChienTranh:countMapSpawn(nW)
+	local counter = 0
+	for k, v in SimCitizen.fighterList do
+		if v.nMapId and v.nMapId == nW and v.baoDanhTongKim == 1 then
+			counter = counter + 1
+		end
+	end
+	return counter
+end
+
+
+function SimCityChienTranh:taoHauDoanh(ngoaitrang)
+	if self:countMapSpawn(self.nW) > 0 then
 		return 1
 	end
+
+	local worldInfo = SimCityWorld:Get(self.nW)
+	if (not worldInfo.presetPaths.haudoanh1 and not worldInfo.presetPaths.haudoanh2) 
+		then
+		return 1
+	end
+
 	local forCamp = 1
 	local capHP = 3
 	local pool = SimCityNPCInfo:getPoolByCap(capHP)
 	local total = 0
 	while total < 20 do
-		local id = pool[random(1, getn(pool))]
-
-		local campDirection = 0
-		if (self.tongkim_camp2TopRight == 1 and forCamp == 1) then
-			campDirection = 1
-		end
-
-		if (self.tongkim_camp2TopRight == 1 and forCamp == 2) then
-			campDirection = 0
-		end
-
-		if (self.tongkim_camp2TopRight == 0 and forCamp == 1) then
-			campDirection = 0
-		end
-
-		if (self.tongkim_camp2TopRight == 0 and forCamp == 2) then
-			campDirection = 1 -- 1 = bottom to top
-		end
-
+		local id = pool[random(1, getn(pool))] 
+		 
 		local myPath = {}
-		if (campDirection == 1) then
+
+		if worldInfo.presetPaths.haudoanh1 and worldInfo.presetPaths.haudoanh2 then
+			local campDirection = self:getCampDirection(forCamp)
+			local firstPoint 
+			if campDirection == 1 then
+				firstPoint = worldInfo.presetPaths.campduoi[1]
+			else
+				firstPoint = worldInfo.presetPaths.camptren[1]
+			end
+
+			local firstHauDoanh1Point = worldInfo.presetPaths.haudoanh1[1]
+			local firstHauDoanh2Point = worldInfo.presetPaths.haudoanh2[1]
+
+			local firstHauDoanh1X, firstHauDoanh1Y = nodeNameToCoords(firstHauDoanh1Point)
+			local firstHauDoanh2X, firstHauDoanh2Y = nodeNameToCoords(firstHauDoanh2Point)
+
+			local firstPointX, firstPointY = nodeNameToCoords(firstPoint)
+
+			local dist1 = GetDistanceRadius(firstPointX, firstPointY, firstHauDoanh1X, firstHauDoanh1Y)
+			local dist2 = GetDistanceRadius(firstPointX, firstPointY, firstHauDoanh2X, firstHauDoanh2Y)
+
+			if dist1 < dist2 then
+				myPath = { {"haudoanh1", 1} }
+			else
+				myPath = { {"haudoanh2", 1} }
+			end
+
+			
+
+		elseif worldInfo.presetPaths.haudoanh1 then
 			myPath = { {"haudoanh1", 1} }
-		else
+		elseif worldInfo.presetPaths.haudoanh2 then
 			myPath = { {"haudoanh2", 1} }
 		end
 
-		local fighter = self:taoNV(id, forCamp, self.nW, myPath, ngoaitrang, nil, capHP, {
+		local fighter = self:taoNV(id, forCamp, worldInfo, myPath, ngoaitrang, nil, capHP, {
 			baoDanhTongKim = 1
 		})
 		if fighter then

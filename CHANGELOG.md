@@ -1,5 +1,29 @@
 # SimCity Changelog
 
+## 5.8.3 (24-04-2025)
+- Giảm tải hệ thống
+- Mở Tống Kim bất kỳ lúc nào
+- Tự động thêm Vô Kỵ Triệu Mẫn vào chiến trường
+ 
+## 5.8 (22-04-2025)
+- Mở thêm các map Tống Kim khác
+- Thay đổi hệ thống đường đi ngẫu nhiên
+
+
+## 5.7.3 (19-04-2025)
+- Sửa lỗi chức năng tự động tắt/mở
+- Nâng cấp chức năng di chuyển trong thành đến những nơi tập trung (hiệu thuốc, tạp hóa, xa phu v.v.)
+  
+## 5.7.1 (18-04-2025)
+- Sửa lỗi không tự động chạy ở JX 6.0
+- Tắt tự động mở trong Tống Kim
+
+## 5.7 (16-04-2025)
+- Thêm chức năng buff bùa, trấn phái và skill
+- Thêm chức năng "Lão Động Vật" ở gần Tương Dương bán ngựa
+
+# SimCity Changelog
+
 ## 5.6 (13-04-2025)
 - Nâng cấp toàn bộ hệ thống
 - Sim Tống Kim cực kỳ nhanh không lag

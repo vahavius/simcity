@@ -4,6 +4,12 @@ settingsPath = "\\settings\\global\\vinh\\simcity\\"
 SimCityPlayerNames = {}
 SimCityChat = {}
 SimCityMap = {}
+SimCityPets = {}
+
+SimCityPhai = {
+    id2phai={}
+}
+
 
 -- Doc ten
 function loadNames()
@@ -24,79 +30,158 @@ function loadChat()
     end
 end
 
+-- Doc pets
+function loadPets()
+    -- nId cat name
+    local petsData = SimCityTableFromFile(settingsPath.. "pets.txt", {"*n", "*w", "*w", "*n"})
+
+    SimCityPets.allCats = {}
+    SimCityPets.allPets = {}
+    for i=1, getn(petsData) do
+        local petId = petsData[i][1]
+        local petCategory = petsData[i][2]		
+		local petName = petsData[i][3]
+        local petCost = petsData[i][4]
+
+        if petId > 0 then
+            if not SimCityPets[petCategory] then  
+                SimCityPets[petCategory] = {}
+                tinsert(SimCityPets.allCats, petCategory)
+            end
+            tinsert(SimCityPets[petCategory], i)
+            SimCityPets.allPets[i] = {petName, petId, petCost}
+        end
+    end
+end
+
 -- Doc map thanh thi va chien tranh
+function createWorldIfNotExists(worldId, worldName)
+    if not SimCityMap[worldId] then
+        SimCityMap[worldId] = {
+            worldId = worldId,
+            name = worldName,
+            nodes = {},
+            presetPaths = {},
+            decoration = {}
+        }
+    end
+    return SimCityMap[worldId]
+end
 function loadMap()
     local mapPath = settingsPath.. "maps\\"
-    local thanhthiData = SimCityTableFromFile(mapPath.. "thanhthi.txt", {"*n", "*w", "*w"})
-    local chientranhData = SimCityTableFromFile(mapPath.. "chientranh.txt", {"*n", "*w", "*w", "*w"})
+    local thanhthiData = SimCityTableFromFile(mapPath.. "thanhthi.txt", {"*n", "*w", "*w", "*w"})
+    local haudoanhData = SimCityTableFromFile(mapPath.. "haudoanh.txt", {"*n", "*w", "*w"})
     local trangtriData = SimCityTableFromFile(mapPath.. "trangtri.txt", {"*n", "*w", "*w"})
-
-    if not thanhthiData or not chientranhData then
+    local attractionsData = SimCityTableFromFile(mapPath.. "attractions.txt", {"*n", "*w", "*n", "*n", "*w", "*n"}) -- worldId, worldName, pX, pY, description, dialogNpcId
+    if not thanhthiData then
         return
     end
+
+    -- Load attractions
+    local mapAtractions = {}
+    for i = 1, getn(attractionsData) do
+        local entry = attractionsData[i]
+        local worldId = entry[1]
+        local worldName = entry[2]
+        local pX = entry[3]
+        local pY = entry[4]
+        local description = entry[5]
+        local dialogNpcId = entry[6]
+        if not mapAtractions[worldId] then
+            mapAtractions[worldId] = {
+                {pX, pY, dialogNpcId}
+            }
+        else
+            tinsert(mapAtractions[worldId], {pX, pY, dialogNpcId})
+        end
+    end
+
+
+    -- Load thanh thi nodes
     for i = 1, getn(thanhthiData) do
         local entry = thanhthiData[i]
         local worldId = entry[1]
         local worldName = entry[2]
         local filePath = entry[3]
+        local fileType = entry[4]
 
-        if not SimCityMap[worldId] then
-            SimCityMap[worldId] = {
-                worldId = worldId,
-                name = worldName,
-                walkPaths = {},
-                decoration = {}
-            }
-        end
-        local world = SimCityMap[worldId]
-        local foundWalkPath = SimCityTableFromFile(mapPath.. filePath, {"*w", "*n", "*n"})
+        local world = createWorldIfNotExists(worldId, worldName)
 
-        local allPath = {}
-        for i=1, getn(foundWalkPath) do
-            if not allPath[foundWalkPath[i][1]] then
-                allPath[foundWalkPath[i][1]] = {}
+        -- Nodes
+        if fileType == "nodes" then
+            -- nodename, linkednodes, isExact, type
+            local foundWalkPath = SimCityTableFromFile(mapPath.. filePath, {"*w", "*w", "*n", "*n"})
+
+            local allNodes = {}
+            
+            for i=1, getn(foundWalkPath) do
+                
+                local col = foundWalkPath[i]
+                local nodeName = col[1]
+
+                local x, y = nodeNameToCoords(nodeName)
+                if i == 1 then
+                    world.firstNode = {x, y}
+                end
+                local linkedNodes = split(col[2], ",")
+                local isExact = col[3]
+                local nodeType = col[4]
+                
+                allNodes[nodeName] = {
+                    x = x,
+                    y = y,
+                    linkedNodes = linkedNodes, 
+                    isExact = isExact, 
+                    nodeType = nodeType, -- 0: normal, 1: war
+                    isNearAtraction = 0
+                }
+
+                if mapAtractions[worldId] then
+                    for j=1, getn(mapAtractions[worldId]) do
+                        local atraction = mapAtractions[worldId][j]
+                        if GetDistanceRadius(x, y, atraction[1], atraction[2]) < 8 then
+                            allNodes[nodeName].isNearAtraction = atraction[3]
+                            break
+                        end
+                    end
+                end
             end
-            tinsert(allPath[foundWalkPath[i][1]], {foundWalkPath[i][2], foundWalkPath[i][3]})
+            world.nodes = allNodes
         end
-        world.walkPaths = allPath
- 
     end
 
-    for i = 1, getn(chientranhData) do
-        local entry = chientranhData[i]
+    -- Load thanh thi preset
+    for i = 1, getn(thanhthiData) do
+        local entry = thanhthiData[i]
         local worldId = entry[1]
         local worldName = entry[2]
-        local camp = entry[3]
-        local pathName = entry[4]
+        local filePath = entry[3]
+        local fileType = entry[4]
 
-        if not SimCityMap[worldId] then
-            SimCityMap[worldId] = {
-                worldId = worldId,
-                name = worldName,
-                chientranh = {
-                    path1 = {},
-                    path2 = {}
-                },
-                decoration = {},
-                walkPaths = {}
-            }
-        end
-
-        local world = SimCityMap[worldId]
-        if not world.chientranh then
-            world.chientranh = {
-                path1 = {},
-                path2 = {}
-            }
-        end
+        local world = createWorldIfNotExists(worldId, worldName)
         
-        if camp == "camp1" then            
-            tinsert(world.chientranh.path1, pathName)
-        elseif camp == "camp2" then
-            tinsert(world.chientranh.path2, pathName)
+        if fileType == "preset" then
+            local foundWalkMap = SimCityTableFromFile(mapPath.. filePath, {"*w", "*w"})
+
+            allPaths = {}
+            for i=1, getn(foundWalkMap) do
+                local pathName = foundWalkMap[i][1]
+                local nodeName = foundWalkMap[i][2]
+
+                if world.nodes[nodeName] then
+                    if not allPaths[pathName] then
+                        allPaths[pathName] = {}
+                    end
+                    tinsert(allPaths[pathName], nodeName)
+                else
+                    print("Simcity loi preset file: " .. filePath .. ". Bo qua node vi khong tim thay dinh nghia: " .. nodeName)
+                end
+            end
+            world.presetPaths = allPaths
         end
     end
 
+    -- Load trang tri
     for i = 1, getn(trangtriData) do
         local entry = trangtriData[i]
         local worldId = entry[1]
@@ -112,9 +197,80 @@ function loadMap()
             SimCityMap[worldId].decoration = allData
         end
     end
+
+    -- Load haudoanh
+    for i = 1, getn(haudoanhData) do
+        local entry = haudoanhData[i]
+        local worldId = entry[1]
+        local campName = entry[2]
+        local nodeName = entry[3]
+
+        if SimCityMap[worldId] then
+            if not SimCityMap[worldId].presetPaths[campName] then
+                SimCityMap[worldId].presetPaths[campName] = {}
+            end
+            tinsert(SimCityMap[worldId].presetPaths[campName], nodeName)
+        end
+    end
+end
+
+-- Doc phai
+function loadFactions()
+    local phaiData = SimCityTableFromFile(settingsPath.. "skills.txt", {"*w", "*n", "*w", "*w", "*n", "*n", "*n"})
+    
+    -- Duong mon khong co skill bi dong gi ca
+    SimCityPhai["duongmon"] = {
+        noCast = {},
+        needCast = {},
+        normalCast = {},
+        knownIds = {}
+    }
+
+    for i=1, getn(phaiData) do
+        local phai = phaiData[i][1]
+        local skillId = phaiData[i][2]
+        local skillName = phaiData[i][3]
+        local skillDesc = phaiData[i][4]
+        local skillMaxLevel = phaiData[i][5]
+        local skillNoCast = phaiData[i][6]
+        local skillNeedCast = phaiData[i][7]
+        
+
+        if not SimCityPhai[phai] then
+            SimCityPhai[phai] = {
+                noCast = {},
+                needCast = {},
+                normalCast = {},
+                knownIds = {}
+            }
+        end
+        if skillNoCast > 0 then
+            tinsert(SimCityPhai[phai].noCast, {skillId, skillMaxLevel, skillName})
+        elseif skillNeedCast > 0 then
+            tinsert(SimCityPhai[phai].needCast, {skillId, skillMaxLevel, skillName})
+        else
+            tinsert(SimCityPhai[phai].normalCast, {skillId, skillMaxLevel, skillName})
+        end
+    end
+
+    local id2factionData = SimCityTableFromFile(settingsPath.. "npcid2faction.txt", {"*n", "*w", "*n", "*n"})
+    for i=1, getn(id2factionData) do
+        local id = id2factionData[i][1]
+        local faction = id2factionData[i][2]
+        local series = id2factionData[i][3]
+        local gen = id2factionData[i][4]
+        if SimCityPhai[faction] then    
+            SimCityPhai[faction].knownIds[id] = {series=series, gen=gen}
+            SimCityPhai.id2phai[id] = faction
+        end
+        
+    end
+
 end
 
 -- EXECUTION
 loadNames()
 loadChat()
 loadMap()
+loadPets()
+loadFactions()
