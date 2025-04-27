@@ -44,11 +44,10 @@ end
 function SimCityMainTongKim:addTongKimNpc()
 end
 
-function SimCityMainTongKim:addTongKimNpcByPlayer()
-
+function SimCityMainTongKim:addTongKimNpcByPlayer(pId)
+	PlayerIndex = pId
 	local pW, pX, pY = GetWorldPos()
 	local worldInfo = SimCityWorld:Get(pW)
-	SimCityChienTranh:removeAll(SubWorldIdx2ID(pW))
 
 	-- Determine camp
 	local myCamp = GetCurCamp() 
@@ -79,7 +78,7 @@ function SimCityMainTongKim:addTongKimNpcByPlayer()
 			end
 		end
 
-		if (camp == 1 or myCamp == 1) then
+		if (myCamp == 1) then
 			camp2X = furthestNode.x
 			camp2Y = furthestNode.y
 		else 
@@ -89,11 +88,30 @@ function SimCityMainTongKim:addTongKimNpcByPlayer()
 	end
 
 	-- Finally set it
-	SimCityChienTranh.camp2TopRight = 0
+	worldInfo.camp2TopRight = 0
 	if (camp2X ~= 0) and (camp2Y ~= 0) and (camp2X > camp1X) and (camp2Y < camp1Y) then
-		SimCityChienTranh.camp2TopRight = 1
+		worldInfo.camp2TopRight = 1
 	end
 
+	worldInfo.camp1X = camp1X
+	worldInfo.camp1Y = camp1Y
+	worldInfo.camp2X = camp2X
+	worldInfo.camp2Y = camp2Y
+	local result = SimCityGraphToChienTranh:build(worldInfo, 32) 
+	 
+
+	-- Auto added?
+	if (result ~= 0) then
+		local counter = SimCityChienTranh:countMap(pW)
+		
+		if STARTUP_AUTOADD_THANHTHI == 1 and counter == 0 then
+			SimCityChienTranh:nv_tudo(1)
+			SimCityChienTranh:nv_tudo(1)
+		end
+
+		-- Add hau doanh
+		SimCityChienTranh:taoHauDoanh(1)		
+	end
 end
 
 function SimCityMainTongKim:addTongKimOpenNpc()
@@ -107,30 +125,31 @@ function SimCityMainTongKim:addTongKimOpenNpc()
 end
 
 function SimCityMainTongKim:onPlayerEnterMap(pW)
-	
-	local isBaoDanh = 0 
+  	local isBaoDanh = 0 
 	if pW == 323 or pW == 324 or pW == 325 then
 		isBaoDanh = 1
 	end
 
 	-- Check if there is a Trieu Man or Vo Ky in the map
-	local fighterList = GetAroundNpcList(isBaoDanh and 16 or 50)
+	local fighterList = GetAroundNpcList(isBaoDanh and 32 or 50)
 
 	local tmpFound
 	local nNpcIdx
+	local didRemove = 0
 
 	for i = 1, getn(fighterList) do
 		nNpcIdx = fighterList[i]
 		local script = GetNpcScript(nNpcIdx)
 		local kind = GetNpcKind(nNpcIdx)
 
-		-- Neu da add roi thi thoi
+		-- Neu da add roi thi xoa di
 		if kind == 3 and script == "\\script\\global\\vinh\\simcity\\controllers\\tongkim.lua" then
-			return 1
+			DelNpcSafe(nNpcIdx)
+			didRemove = 1
 		end
 
 		if kind == 3 then
-			if strfind(script, "transport.lua") or strfind(script, "doctor.lua") then
+			if strfind(script, "transport.lua") or strfind(script, "doctor.lua") or strfind(script, "openbox.lua") then
 				tmpFound = nNpcIdx
 			end
 		end
@@ -143,7 +162,10 @@ function SimCityMainTongKim:onPlayerEnterMap(pW)
 	
 	-- Neu tim thay Quan Nhu Quan thi them vao Trieu Man va Vo Ky
 	if tmpFound then
-		SimCityMainTongKim:addTongKimNpcByPlayer()
+		if didRemove == 0 then
+			SimCityChienTranh:removeAll(pW)
+		end
+		AddTimer(18*2, "SimCityMainTongKim:addTongKimNpcByPlayer", PlayerIndex)
 	end
 
 end

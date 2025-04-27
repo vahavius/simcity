@@ -4,8 +4,7 @@ SimCityChienTranh = {
 
 	path1 = {},
 	path2 = {},
-
-	camp2TopRight = 0
+ 
 }
 
 function createTaskSayChienTranh(mapId, extra)
@@ -36,51 +35,75 @@ function createTaskSayChienTranh(mapId, extra)
 
 	return tbOpt
 end
-
-function SimCityChienTranh:getCampDirection(forCamp)
-	local campDirection = 0
-	if (self.camp2TopRight == 1 and forCamp == 1) then
-		campDirection = 1
-	end
-
-	if (self.camp2TopRight == 1 and forCamp ~= 1) then
-		campDirection = 0
-	end
-
-	if (self.camp2TopRight == 0 and forCamp == 1) then
-		campDirection = 0
-	end
-
-	if (self.camp2TopRight == 0 and forCamp ~= 1) then
-		campDirection = 1 -- 1 = bottom to top
-	end
-	return campDirection
-end
+ 
 
 function SimCityChienTranh:genWalkPath(forCamp) 
 	local worldInfo = SimCityWorld:Get(self.nW)
 
-	local path1 = worldInfo.chienTranhPaths
+	
 	-- Duoi len tren
 	local myPath = {}
-	local campDirection = self:getCampDirection(forCamp)
-	if (campDirection == 1) then
-		local mainPath = path1[random(1, getn(path1))]
-		local mySpawn = "campduoi"
-		local theirSpawn = "camptren"
-		tinsert(myPath, { mySpawn, 0 })
+	local mySpawnODuoi = 1
+	
+	if (worldInfo.camp2TopRight == 1) then
+		if forCamp == 1 then
+			mySpawnODuoi = 1
+		else
+			mySpawnODuoi = 0
+		end
+	else
+		if forCamp == 1 then
+			mySpawnODuoi = 0
+		else
+			mySpawnODuoi = 1
+		end
+	end
+
+	local presetCampDuoiKey = worldInfo.presetPaths.baseDuoi
+	local presetCampTrenKey = worldInfo.presetPaths.baseTren 
+
+	if (mySpawnODuoi == 1) then
+		
+		if worldInfo.restrictedSpawns.campduoi then
+			local filtered = {}
+			for i=1, getn(presetCampDuoiKey) do
+				local key = presetCampDuoiKey[i]
+				if not worldInfo.restrictedSpawns.campduoi[key] then
+					tinsert(filtered, key)
+				end
+			end
+			presetCampDuoiKey = filtered
+		end
+
+		local mySpawn = presetCampDuoiKey[random(1, getn(presetCampDuoiKey))]
+		local theirSpawn = presetCampTrenKey[random(1, getn(presetCampTrenKey))]
+		local mainPath = SimCityGraphToChienTranh:autoFindPathNames(worldInfo, mySpawn, theirSpawn, 0)
+
+ 		tinsert(myPath, { mySpawn, 0 })
 		tinsert(myPath, { mainPath, 1})
 		tinsert(myPath, { theirSpawn, 1 })
 
-	-- Tren xuong duoi
+	-- My spawn o tren
 	else
- 		local mainPath = path1[random(1, getn(path1))]
-		local mySpawn = "camptren"
-		local theirSpawn = "campduoi"
-		tinsert(myPath, { mySpawn, 0 })
-		tinsert(myPath, {mainPath, -1})
+
+		if worldInfo.restrictedSpawns.camptren then
+			local filtered = {}
+			for i=1, getn(presetCampTrenKey) do
+				local key = presetCampTrenKey[i]
+				if not worldInfo.restrictedSpawns.camptren[key] then
+					tinsert(filtered, key)
+				end
+			end	
+			presetCampTrenKey = filtered
+		end
+
+		local mySpawn = presetCampTrenKey[random(1, getn(presetCampTrenKey))]
+		local theirSpawn = presetCampDuoiKey[random(1, getn(presetCampDuoiKey))]
+		local mainPath = SimCityGraphToChienTranh:autoFindPathNames(worldInfo, mySpawn, theirSpawn, 1)
+ 		tinsert(myPath, { mySpawn, 0 })
+		tinsert(myPath, { mainPath, -1})
 		tinsert(myPath, { theirSpawn, 1 })
-	end 
+	end  
  
 	return myPath
 end
@@ -106,7 +129,7 @@ function SimCityChienTranh:taoNV(id, camp, worldInfo, walkPathNames, nt, theosau
 		realCamp = camp
 		hardsetName = (nt == 1 and SimCityNPCInfo:generateName()) or nil
 	end
-
+ 
 	local tbNpc = {
 		mode = "chiendau",
 		szName = name or "",
@@ -299,8 +322,7 @@ function SimCityChienTranh:taophe(nW, camp, linhthuong1, linhthuong2, hieuuy, ph
 end
 
 function SimCityChienTranh:phe_tudo(startNPCIndex, perPage, ngoaitrang)
-	self:taoHauDoanh(ngoaitrang or 0)
-
+ 
 	local worldInfo = SimCityWorld:Get(self.nW)
 
 	local forCamp = 1
@@ -320,8 +342,7 @@ function SimCityChienTranh:phe_tudo(startNPCIndex, perPage, ngoaitrang)
 end
 
 function SimCityChienTranh:phe_tudo_xe(startNPCIndex, perPage, ngoaitrang)
-	self:taoHauDoanh(ngoaitrang or 0)
-
+ 
 	local worldInfo = SimCityWorld:Get(self.nW)
 
 	local forCamp = 1
@@ -367,34 +388,50 @@ function SimCityChienTranh:phe_tudo_xe(startNPCIndex, perPage, ngoaitrang)
 end
 
 function SimCityChienTranh:nv_tudo(capHP)
-	self:taoHauDoanh(1)
-
+ 
 	local worldInfo = SimCityWorld:Get(self.nW)
 
 	local forCamp = 1
-
 	local pool = SimCityNPCInfo:getPoolByCap(capHP)
-
 	local total = 0
-	while total < 100 do
+	local loop = 0
+	
+	local rate = worldInfo.teamRatio or 0.5
+	local everyoneCount = 100
+
+	local team1Size = floor(everyoneCount * rate)
+	local team2Size = everyoneCount - team1Size
+
+	-- create team 1
+	total = 0
+	forCamp = 1
+	while total < team1Size and loop < team1Size*3 do
 		local id = pool[random(1, getn(pool))]
 		local myPath = self:genWalkPath(forCamp)
-
 		local fighter = self:taoNV(id, forCamp, worldInfo, myPath, 1, nil, capHP)
 		if fighter then
-			if forCamp == 1 then
-				forCamp = 2
-			else
-				forCamp = 1
-			end
 			total = total + 1
 		end
+		loop = loop + 1
+	end
+
+	-- create team 2
+	total = 0
+	forCamp = 2
+	loop = 0
+	while total < team2Size and loop < team2Size*3 do
+		local id = pool[random(1, getn(pool))]
+		local myPath = self:genWalkPath(forCamp)
+		local fighter = self:taoNV(id, forCamp, worldInfo, myPath, 1, nil, capHP)
+		if fighter then
+			total = total + 1
+		end
+		loop = loop + 1
 	end
 end
 
 function SimCityChienTranh:nv_tudo_xe(capHP)
-	self:taoHauDoanh(1)
-
+ 
 	local forCamp = 1
 	local pool = SimCityNPCInfo:getPoolByCap(capHP)
 
@@ -490,8 +527,7 @@ function SimCityChienTranh:goiAnhHungThiepNgoaiTrang()
 	local extra = "<enter><enter><color=yellow>Nh©n sè hiÖn t¹i: " .. counter .. "<color>"
 
 
-	local tbSay = createTaskSayChienTranh(self.nW, extra)
-
+	local tbSay = createTaskSayChienTranh(self.nW, extra)	
 
 	tinsert(tbSay, "§Ö tö tinh anh (100 thiÕp)/#SimCityChienTranh:nv_tudo(1)")
 	tinsert(tbSay, "§Ö tö tinh anh (5 nhãm)/#SimCityChienTranh:nv_tudo_xe(1)")
@@ -538,6 +574,43 @@ function SimCityChienTranh:goiAnhHungThiep()
 	tinsert(tbSay, "KÕt thóc ®èi tho¹i./no")
 	CreateTaskSay(tbSay)
 	return 1
+end
+
+
+function SimCityChienTranh:khaiChienPhongHoaLienThanh()	
+	if self.nW ~= 580 and self.nW ~= 581 then
+		return 1
+	end
+	SetMissionV(5, 89)
+	Say("Qu©n ®Þch sÏ b¾t ®Çu c«ng thµnh trong 20 gi©y, c¸c T­íng sÜ h·y s½n sµng!")
+
+	for k, v in SimCitizen.fighterList do
+		if v.nMapId and v.nMapId == self.nW then
+			v.tick_canWalk = 0
+		end
+	end
+
+	return 1
+ end
+
+function SimCityChienTranh:khaiChienTongKim()	
+	if self.nW == 580 or self.nW == 581 then
+		self:khaiChienPhongHoaLienThanh()
+		return 1
+	end
+	if GetMissionV(1) ~= 2 then			
+		AddGlobalCountNews("Thêi gian b¸o danh ®· kÕt thóc. ChiÕn ®Êu chÝnh thøc b¾t ®Çu", 2);
+		Msg2Map(self.nW, "Phong V©n LuËn KiÕm chÝnh thøc khai chiÕn! C¸c chiÕn sÜ! X«ng lªn!");
+		SetMissionV(1,2);
+		BT_SetData( 46, GetGameTime() )
+		PutMessage("§Þch qu©n ®· b¾t ®Çu hµnh ®éng! C¸c chiÕn sÜ! X«ng lªn!")
+
+		for k, v in SimCitizen.fighterList do
+			if v.nMapId and v.nMapId == self.nW then
+				v.tick_canWalk = 0
+			end
+		end
+	end
 end
 
 function SimCityChienTranh:showBXH(inp)
@@ -587,7 +660,7 @@ function SimCityChienTranh:mainMenu()
 	local result = SimCityGraphToChienTranh:build(worldInfo, 32)
 
 	if (result == 0) then
-		local tbSay = createTaskSayThanhThi("<enter><enter>ChiÕn lo¹n t¹i b¶n ®å nµy ch­a ®­îc më. Chµng cã thÓ gëi <color=yellow>®Þa ®å chÝ<color> ®Õn t¸c gi¶ trªn fb héi qu¸n.")
+		local tbSay = createTaskSayChienTranh("<enter><enter>ChiÕn lo¹n t¹i b¶n ®å nµy ch­a ®­îc më. Chµng cã thÓ gëi <color=yellow>®Þa ®å chÝ<color> ®Õn t¸c gi¶ trªn fb héi qu¸n.")
 		tinsert(tbSay, "KÕt thóc ®èi tho¹i./no")
 		CreateTaskSay(tbSay)
 		return 1 
@@ -601,6 +674,12 @@ function SimCityChienTranh:mainMenu()
 	local tbSay = createTaskSayChienTranh(self.nW, extra)
 	if SimCityMainThanhThi then
 		SimCityMainThanhThi:removeAll()
+	end
+
+	if worldInfo.isTongKim == 1 then
+		if GetMissionV(1) ~= 2 then
+			tinsert(tbSay, "Khai chiÕn/#SimCityChienTranh:khaiChienTongKim()")
+		end
 	end
 
 	tinsert(tbSay, "Ph¸t anh hïng thiÕp/#SimCityChienTranh:goiAnhHungThiepNgoaiTrang()")
@@ -643,56 +722,96 @@ function SimCityChienTranh:taoHauDoanh(ngoaitrang)
 	local capHP = 3
 	local pool = SimCityNPCInfo:getPoolByCap(capHP)
 	local total = 0
-	while total < 20 do
-		local id = pool[random(1, getn(pool))] 
+	local pW, pX, pY = GetWorldPos()
+	local userCamp = GetCurCamp()
+
+	local firstPoint = nil
+	local firstPointX = 0
+	local firstPointY = 0
+	local dist1 = 0
+	local secondPoint = nil
+	local secondPointX = 0
+	local secondPointY = 0
+	local dist2 = 0
+	local myPath = nil
+	local id = 0
+	local loop = 0
+	while (total < 20 and loop < 100)  do
+		loop = loop + 1
+		id = pool[random(1, getn(pool))] 
 		 
-		local myPath = {}
+		myPath = nil
 
 		if worldInfo.presetPaths.haudoanh1 and worldInfo.presetPaths.haudoanh2 then
-			local campDirection = self:getCampDirection(forCamp)
-			local firstPoint 
-			if campDirection == 1 then
-				firstPoint = worldInfo.presetPaths.campduoi[1]
-			else
-				firstPoint = worldInfo.presetPaths.camptren[1]
-			end
+			local myHauDoanh = "haudoanh1"			
 
-			local firstHauDoanh1Point = worldInfo.presetPaths.haudoanh1[1]
-			local firstHauDoanh2Point = worldInfo.presetPaths.haudoanh2[1]
+			-- Note: sometimes preset paths are swapped around in correctly, we need to check based on user position
+			firstPoint = worldInfo.presetPaths.haudoanh1[1]
+			firstPointX, firstPointY = nodeNameToCoords(firstPoint)
+			dist1 = GetDistanceRadius(pX, pY, firstPointX, firstPointY)
 
-			local firstHauDoanh1X, firstHauDoanh1Y = nodeNameToCoords(firstHauDoanh1Point)
-			local firstHauDoanh2X, firstHauDoanh2Y = nodeNameToCoords(firstHauDoanh2Point)
+			secondPoint = worldInfo.presetPaths.haudoanh2[1]
+			secondPointX, secondPointY = nodeNameToCoords(secondPoint)
+			dist2 = GetDistanceRadius(pX, pY, secondPointX, secondPointY)
 
-			local firstPointX, firstPointY = nodeNameToCoords(firstPoint)
+			-- TH 1, dang o chung camp voi user va haudoanh nao gan user nhat?
+			if userCamp == forCamp then 
+				if dist2 < dist1 then
+					myHauDoanh = "haudoanh2"
+				else
+					myHauDoanh = "haudoanh1"
+				end
+			-- TH 2, dang o khac camp voi user va hau doanh nao xa user nhat
+			elseif userCamp ~= forCamp then
+				if dist2 < dist1 then
+					myHauDoanh = "haudoanh1"
+				else
+					myHauDoanh = "haudoanh2"
+				end
+			end 
 
-			local dist1 = GetDistanceRadius(firstPointX, firstPointY, firstHauDoanh1X, firstHauDoanh1Y)
-			local dist2 = GetDistanceRadius(firstPointX, firstPointY, firstHauDoanh2X, firstHauDoanh2Y)
-
-			if dist1 < dist2 then
-				myPath = { {"haudoanh1", 1} }
-			else
-				myPath = { {"haudoanh2", 1} }
-			end
-
-			
+			myPath = { {myHauDoanh, 1} }
 
 		elseif worldInfo.presetPaths.haudoanh1 then
-			myPath = { {"haudoanh1", 1} }
+			firstPoint = worldInfo.presetPaths.haudoanh1[1]
+			firstPointX, firstPointY = nodeNameToCoords(firstPoint)
+			dist1 = GetDistanceRadius(pX, pY, firstPointX, firstPointY)
+
+			if (userCamp == forCamp and dist1 < 50) or 
+				(userCamp ~= forCamp and dist1 > 100) then
+				myPath = { {"haudoanh1", 1} }
+			else
+				myPath = nil
+			end
+
+
 		elseif worldInfo.presetPaths.haudoanh2 then
-			myPath = { {"haudoanh2", 1} }
+			secondPoint = worldInfo.presetPaths.haudoanh2[1]
+			secondPointX, secondPointY = nodeNameToCoords(secondPoint)
+			dist2 = GetDistanceRadius(pX, pY, secondPointX, secondPointY)
+			
+			if (userCamp == forCamp and dist2 < 50) or 
+				(userCamp ~= forCamp and dist2 > 100) then
+				myPath = { {"haudoanh2", 1} }
+			else
+				myPath = nil
+			end
 		end
 
-		local fighter = self:taoNV(id, forCamp, worldInfo, myPath, ngoaitrang, nil, capHP, {
-			baoDanhTongKim = 1
-		})
-		if fighter then
-			if forCamp == 1 then
-				forCamp = 2
-			else
-				forCamp = 1
+		if myPath then
+ 			local fighter = self:taoNV(id, forCamp, worldInfo, myPath, ngoaitrang, nil, capHP, {
+				baoDanhTongKim = 1
+			})
+			if fighter then 
+				total = total + 1
 			end
-			total = total + 1
 		end
+		if forCamp == 1 then
+			forCamp = 2
+		else
+			forCamp = 1
+		end
+
 	end
 	
 end

@@ -1,5 +1,21 @@
 # SimCity Changelog
 
+## 5.9.2 (27-04-2025)
+- Sửa lỗi tạo quái nhân
+- Thay đổi AI
+
+## 5.9.1 (26-04-2025)
+- Sửa lỗi Kéo Xe đứng im
+- Sửa lỗi tạo sai camp trong Tống Kim
+
+
+## 5.9 (26-04-2025)
+- Thêm chức năng Phong Hỏa Liên Thành
+
+## 5.8.4 (25-04-2025)
+- Thêm chức năng khai chiến Tống Kim xông lên không cần đợi
+- Sửa lỗi hậu doanh
+
 ## 5.8.3 (24-04-2025)
 - Giảm tải hệ thống
 - Mở Tống Kim bất kỳ lúc nào

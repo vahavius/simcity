@@ -19,13 +19,15 @@ function IsActive(self, simInstance,tbNpc)
             local camp = CallPlayerFunction(pID, GetCurCamp)
             local pW, pX, pY = CallPlayerFunction(pID, GetWorldPos)
 
-            if tbNpc.worldInfo.playerTracker[pID] and tbNpc.worldInfo.playerTracker[pID][1] ~= pX and tbNpc.worldInfo.playerTracker[pID][2] ~= pY then
-                tbNpc.worldInfo.playerTracker[pID] = {pX, pY, camp}
-            end
+            if tbNpc.worldInfo then
+                if tbNpc.worldInfo.playerTracker[pID] and tbNpc.worldInfo.playerTracker[pID][1] ~= pX and tbNpc.worldInfo.playerTracker[pID][2] ~= pY then
+                    tbNpc.worldInfo.playerTracker[pID] = {pX, pY, camp}
+                end
 
-            if not tbNpc.worldInfo.playerTracker[pID] then
-                tbNpc.worldInfo.playerTracker[pID] = {pX, pY, camp}
-                tbNpc.worldInfo.playerTrackerCount = tbNpc.worldInfo.playerTrackerCount + 1
+                if not tbNpc.worldInfo.playerTracker[pID] then
+                    tbNpc.worldInfo.playerTracker[pID] = {pX, pY, camp}
+                    tbNpc.worldInfo.playerTrackerCount = tbNpc.worldInfo.playerTrackerCount + 1
+                end
             end
 
             -- Is this player an enemy?
@@ -55,9 +57,7 @@ end
 
 SimMovement = {}
 SimMovement.KeoXe = {
-    IsActive = function(self, simInstance, tbNpc)
-        return 1
-    end,
+    IsActive = IsActive,
 
     resetPos = function(self, simInstance, nListId)
         local tbNpc = simInstance.fighterList[nListId]
@@ -291,8 +291,9 @@ SimMovement.Citizen = {
                     then
                     
                     -- No direct edge, need to find path to next node 
-                    local paths = SimCityGraphToChienTranh:find_all_paths(nodes, currentNodeName, nextNodeName, 1, 0)
-                    
+                    --print("NEXT PATH", currentNodeName, nextNodeName)
+                    local paths = SimCityGraphToChienTranh:find_all_paths(nodes, currentNodeName, nextNodeName, 0)
+                    --print("FOUND PATHS 2", getn(paths))
                     if paths and getn(paths) > 0 then
                         -- Take first found path and set current point to first node
                         -- Loop through all found paths to find first matching one
@@ -305,14 +306,15 @@ SimMovement.Citizen = {
                                 local closestDist = 999999
                                 local closestIndex = 1
                                 for i = 1, getn(currentPath) do
-                                    local dist = GetDistanceRadius(nodes[currentPath[i]][1], nodes[currentPath[i]][2], 
-                                                                 firstNodeCoords.x, firstNodeCoords.y)
+                                    local dist = GetDistanceRadius(
+                                        nodes[currentPath[i]][1], nodes[currentPath[i]][2], 
+                                        firstNodeCoords[1], firstNodeCoords[2])
                                     if dist < closestDist then
                                         closestDist = dist
                                         closestIndex = i
                                     end
                                 end
-                                if (closestIndex ~= tbNpc.currentPointIndex) then
+                                if (closestDist > 0 and closestIndex ~= tbNpc.currentPointIndex) then
                                     tbNpc.currentPointIndex = closestIndex
                                     return 0
                                 end
@@ -582,12 +584,19 @@ SimMovement.Citizen = {
                     tbNpc.currentPathIndex = tbNpc.walkPathNames[1][1]
                     tbNpc.pathDirection = tbNpc.walkPathNames[1][2]
                     tbNpc.pathSegment = 1
+
                     local pathLength = getn(tbNpc.worldInfo.presetPaths[tbNpc.currentPathIndex])
-                    if tbNpc.pathDirection == 1 or tbNpc.pathDirection == 0 then
-                        tbNpc.currentPointIndex = random(1, 3)
-                    elseif tbNpc.pathDirection == -1 then
-                        tbNpc.currentPointIndex = random(pathLength - 3, pathLength)
+
+                    if pathLength > 3 then                        
+                        if tbNpc.pathDirection == 1 or tbNpc.pathDirection == 0 then
+                            tbNpc.currentPointIndex = random(1, 3)
+                        elseif tbNpc.pathDirection == -1 then
+                            tbNpc.currentPointIndex = random(pathLength - 3, pathLength)
+                        end
+                    else
+                        tbNpc.currentPointIndex = 1
                     end
+
                     tbNpc.pathStart = nil
                     tbNpc.pathEnd = nil
                     tbNpc.tick_canWalk = tbNpc.tick_breath + random(TONGKIM_SPAWN_MINSTAY, TONGKIM_SPAWN_MAXSTAY)*18/REFRESH_RATE
