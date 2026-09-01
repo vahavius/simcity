@@ -1,5 +1,13 @@
 # SimCity Changelog
 
+## 5.11.1 (05-05-2025)
+- Tính năng Tiểu Thiếp
+- Cập nhật tính năng Tiểu Thiếp theo sau buff và đánh
+
+## 5.10 (04-05-2025)
+- Tính năng Thú Cưng
+
+
 ## 5.9.2 (27-04-2025)
 - Sửa lỗi tạo quái nhân
 - Thay đổi AI

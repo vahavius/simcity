@@ -99,10 +99,13 @@ SimMovement.KeoXe = {
 
             if isPlayerFighting ~= tbNpc.isPlayerFighting then
                 tbNpc.isPlayerFighting = isPlayerFighting
-                if isPlayerFighting == 1 then
-                    SetNpcKind(tbNpc.finalIndex, tbNpc.kind or 4)
-                else
-                    SetNpcKind(tbNpc.finalIndex, 0)
+
+                if tbNpc.mode ~= "tieuthiep" then
+                    if isPlayerFighting == 1 then
+                        SetNpcKind(tbNpc.finalIndex, tbNpc.kind or 4)
+                    else
+                        SetNpcKind(tbNpc.finalIndex, 0)
+                    end
                 end
             end
 
