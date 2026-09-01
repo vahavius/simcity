@@ -64,3 +64,31 @@ Chạy trên JX Server 6 và 8
 
 ![](https://github.com/vinh-ttn/materials/blob/main/simcity/keoxe.gif)
 
+
+
+
+Nhân dịp sắp cuối tuần nên mình xin phép post bài chia sẻ script ngắn đã hứa với 1 vài ae kỳ trước 🤝
+
+Do mình mới chơi lại chưa tạo bang nên không có clip demo cho chức năng 1 ae thông cảm.
+
+A. Giới thiệu
+Script này có 2 chức năng chính: ✨
+
+    🏰 Chia sẻ kinh nghiệm với thành viên bang khi đánh quái: thành viên bang khi đi luyện đứng gần nhau cùng nhận được kinh nghiệm mà không cần PT. AE coi clip cũ về chức năng này ở đây vậy: https://www.facebook.com/share/v/18qLLn4uRQ/
+
+    Vậy là AE tha hồ kéo cả bang cả chục acc đi train cùng nhau khỏi lo giới hạn pt 8 người 🚀🚀🚀
+    (nhưng với vật phẩm rớt, mà không có trong pt thì phải đợi thành viên bang quăng ra mới lụm được nha)
+    ⚔️ Cập nhật kéo xe của SimCity (clip demo): kéo xe đi đánh quái nhận được kinh nghiệm và vật phẩm - như 1 đồng hành miễn phí vậy 🧑‍🤝‍🧑🔥
+
+
+
+B. Download & Cài đặt:
+Down và ghi đè lên file server1/script/activitysys/g_npcdeath.lua trong server của bạn là xong.
+
+https://github.com/vinh-ttn/simcity/blob/main/server1/script/activitysys/g_npcdeath.lua
+
+Ghi chú:
+
+    Mình chưa test với bản 6.0 nhưng chắc xài được ❓ Nhớ sao lưu bản của bạn trước khi chép đè lên
+    Script này đã được tích hợp sẵn trong SimCity bản 5.5 trở đi. Không cần cài lại. ✅ Nên bác nào có cài Simcity thì xóa hết đi cài bản 5.5 (- hoặc dùng app QLSV của 1click pb mới nhất rồi dùng nó để cập nhật SimCity) 🔄
+
